@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"កញ្ចប់​ឧបករណ៍ SIM"</string>
+<string name="menu_end_session">"បញ្ចប់​វគ្គ"</string>
+<string name="help">"ជំនួយ"</string>
+<string name="menu_back">"ថយក្រោយ"</string>
+<string name="service_name">"ឈ្មោះ​សេវាកម្ម"</string>
+<string name="stk_no_service">"មិនមាន​សេវាកម្ម​អាច​ប្រើបាន"</string>
+<string name="button_ok">យល់ព្រម</string>
+<string name="button_cancel">បោះបង់</string>
+<string name="button_yes">"បាទ/ចាស"</string>
+<string name="button_no">បោះបង់</string>
+<string name="alphabet">"តួ​អក្សរ"</string>
+<string name="digits">"ខ្ទង់ (0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"កំពុង​ដំណើរការហៅ\u2026"</string>
+<string name="default_setup_call_msg">"កំពុង​រៀបចំ​ការហៅ"</string>
+<string name="stk_app_state">"ស្ថានភាព​កម្មវិធី"</string>
+<string name="enable_app">បានបើកប្រើប្រាស់</string>
+<string name="disable_app">បានបិទប្រើប្រាស់</string>
+<string name="stk_dialog_title">"កញ្ចប់​ឧបករណ៍ SIM"</string>
+<string name="default_tone_dialog_msg">"សំឡេង​ចាក់"</string>
+<string name="default_open_channel_msg">"បើក​ប៉ុស្តិ៍?"</string>
+<string name="default_send_data_msg">"កំពុងផ្ញើ​ទិន្នន័យ"</string>
+<string name="default_receive_data_msg">"កំពុង​ទទួល​ទិន្នន័យ"</string>
+<string name="default_close_channel_msg">"បាន​បិទ​ប៉ុស្តិ៍"</string>
+<string name="stk_dialog_accept">"បាទ/ចាស"</string>
+<string name="stk_dialog_reject">បោះបង់</string>
+<string name="no_sim_card_inserted">"សូម​បញ្ចូល SIM ដើម្បី​ចាប់ផ្ដើម​ដំណើរការ​កញ្ចប់​ឧបករណ៍ SIM ។"</string>
+<string name="stk_channel_name">"សារ​សេវាកម្ម​ចល័ត"</string>
+</resources>

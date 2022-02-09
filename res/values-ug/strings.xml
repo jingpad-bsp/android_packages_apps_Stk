@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"SIMقورال  ساندۇقى"</string>
+<string name="menu_end_session">"سۆزلىشىش ئاياغلاشتى"</string>
+<string name="help">ياردەم</string>
+<string name="menu_back">قايتىش</string>
+<string name="service_name">"مۇلازىمەت ئىسمى"</string>
+<string name="stk_no_service">"ئىشلىتىشكە بولىدىغان مۇلازىمەت يوق"</string>
+<string name="button_ok">مۇقىملاش</string>
+<string name="button_cancel">ئەمەلدىن قالدۇرۇش</string>
+<string name="button_yes">ھەئە</string>
+<string name="button_no">ياق</string>
+<string name="alphabet">"ھەرپ"</string>
+<string name="digits">"(0-9, *, #, +)رەقەملەر"</string>
+<string name="default_call_setup_msg">"...سۆزلىشىۋاتىدۇ"</string>
+<string name="default_setup_call_msg">"سۆزلىشىشنى تەڭشەۋاتىدۇ"</string>
+<string name="stk_app_state">"ئەپ ھالىتى"</string>
+<string name="enable_app">"ئېچىش"</string>
+<string name="disable_app">"ئېتىش"</string>
+<string name="stk_dialog_title">"SIMقورال  ساندۇقى"</string>
+<string name="default_open_channel_msg">"قانالنى ئاچامسىز؟"</string>
+<string name="default_send_data_msg">"سانلىق مەلۇمات يوللاۋاتىدۇ"</string>
+<string name="default_receive_data_msg">"سانلىق مەلۇمات قوبۇل قىلىۋاتىدۇ"</string>
+<string name="default_close_channel_msg">"قانال ئېتىۋىتىلدى"</string>
+<string name="stk_dialog_accept">ھەئە</string>
+<string name="stk_dialog_reject">ياق</string>
+<string name="no_sim_card_inserted">".كارتا قۇرال سومكىسىنى قوزغىتىشSIMكارتا كىرگۈزۈپSIM"</string>
+</resources>

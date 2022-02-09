@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"SIM ٽول ڪٽ"</string>
+<string name="menu_end_session">"سيشن جي پڄاڻي ڪريو"</string>
+<string name="help">" مدد"</string>
+<string name="menu_back">" واپس"</string>
+<string name="service_name">.سروس جو نالو"</string>
+<string name="stk_no_service">"ڪا به سروس دستياب ڪانهي"</string>
+<string name="button_ok">"ٺيڪ آهي"</string>
+<string name="button_cancel">" رد ڪريو"</string>
+<string name="button_yes">" هاءُ"</string>
+<string name="button_no">"نه"</string>
+<string name="alphabet">"اکر"</string>
+<string name="digits">"هندسه (0-9، *، #، +)"</string>
+<string name="default_call_setup_msg">"ڪال زير عمل آهي..."</string>
+<string name="default_setup_call_msg">"ڪال جي ترڪيب ٿي رهي آهي"</string>
+<string name="stk_app_state">.اطلاق جي حالت"</string>
+<string name="enable_app">"فعال ڪيل"</string>
+<string name="disable_app">"غير فعال ڪيل"</string>
+<string name="stk_dialog_title">"SIM ٽول ڪٽ"</string>
+<string name="default_open_channel_msg">"چئنل کولڻ ٿا چاهيو؟"</string>
+<string name="default_send_data_msg">"ڊيٽا موڪلجي رهي آهي"</string>
+<string name="default_receive_data_msg">"ڊيٽا وصول ٿي رهي آهي"</string>
+<string name="default_close_channel_msg">"چئنل بند پيل آهي"</string>
+<string name="stk_dialog_accept">" هاءُ"</string>
+<string name="stk_dialog_reject">"نه"</string>
+<string name="no_sim_card_inserted">"SIM ٽول ڪٽ کي هلائڻ لاءِ مهرباني ڪري SIM داخل ڪريو."</string>
+<string name="default_tone_dialog_msg">"آواز وڄائيندي"</string>
+<string name="stk_channel_name">"موبائل خدمت جا سنيھا"</string>
+</resources>

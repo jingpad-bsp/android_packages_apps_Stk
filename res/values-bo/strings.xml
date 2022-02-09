@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"SIMཁཱ་ཡི་ཉེར་སྤྱོད།"</string>
+<string name="menu_end_session">"ཁ་བརྡ་རྫོགས།"</string>
+<string name="help">རོགས་རམ།</string>
+<string name="menu_back">ཕྱིར་ལོག</string>
+<string name="service_name">"ཞབས་ཞུའི་མིང་།"</string>
+<string name="stk_no_service">"སྤྱོད་ཐུབ་པའི་ཞབས་ཞུ་མི་འདུག"</string>
+<string name="button_ok">ལགས་སོ།</string>
+<string name="button_cancel">འདོར།</string>
+<string name="button_yes">ཡིན།</string>
+<string name="button_no">"མིན།"</string>
+<string name="alphabet">"ཀ་མད།"</string>
+<string name="digits">"ཨང་གྲངས། (0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"ཁ་བརྡ་བྱེད་བཞིན་འདུག…"</string>
+<string name="default_setup_call_msg">"ཁ་བརྡ་སྒྲིག་འགོད་བྱེད་བཞིན་འདུག"</string>
+<string name="stk_app_state">"ཉེར་སྤྱོད་ཀྱི་རྣམ་པ།"</string>
+<string name="enable_app">སྤྱོད་མགོ་བསླངས།</string>
+<string name="disable_app">སྤྱོད་མཚམས་བཞག</string>
+<string name="stk_dialog_title">"SIMཁཱ་ཡི་ཉེར་སྤྱོད།"</string>
+<string name="default_open_channel_msg">" རྒྱུ་ལམ་གྱི་སྒོ་འབྱེད་རྒྱུ་ཡིན་ནམ།"</string>
+<string name="default_send_data_msg">"དན་གྲངས་སྐྱེལ་བཞིན་འདུག"</string>
+<string name="default_receive_data_msg">"དན་གྲངས་འབྱོར་བཞིན་འདུག"</string>
+<string name="default_close_channel_msg">"རྒྱུ་ལམ་གྱི་སྒོ་སྟེམ་ཡིན།"</string>
+<string name="stk_dialog_accept">ཡིན།</string>
+<string name="stk_dialog_reject">"མིན།"</string>
+<string name="no_sim_card_inserted">"SIM་བྱང་བུ་ནང་འཇུག་བྱས་ནས་SIM་བྱང་བུ་ལག་ཆའི་སྒུལ་སློང་རོགས།"</string>
+</resources>

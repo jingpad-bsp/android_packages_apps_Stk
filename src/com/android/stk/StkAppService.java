@@ -40,6 +40,9 @@ import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.media.ToneGenerator;
+import android.media.AudioManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -54,9 +57,13 @@ import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemProperties;
 import android.os.Vibrator;
+import android.os.UserManager;
+import android.os.UserHandle;
+import android.os.PowerManager.WakeLock;
 import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.CarrierConfigManager;
+import android.telephony.CarrierConfigManagerEx;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -89,6 +96,9 @@ import com.android.internal.telephony.uicc.IccRefreshResponse;
 import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.GsmAlphabet;
 import com.android.internal.telephony.cat.CatService;
+import com.android.internal.telephony.Phone;
+import com.android.internal.telephony.PhoneFactory;
+import com.android.internal.telephony.CommandsInterface;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -142,6 +152,13 @@ public class StkAppService extends Service implements Runnable {
         private boolean mIdleModeTextVisible = false;
         // Determins whether the current session was initiated by user operation.
         protected boolean mIsSessionFromUser = false;
+        /*UNISOC: Feature for SET_UP_CALL @{ */
+        protected boolean mSetupCallInProcess = false; // true means in process.
+        /*UNISOC: @}*/
+        /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+        protected boolean mDisplayTextResponsed = false; // true means have send TR.
+        private int mDelayToCheckTime = 0;
+        /*UNISOC: @}*/
         final synchronized void setPendingActivityInstance(Activity act) {
             CatLog.d(this, "setPendingActivityInstance act : " + mSlotId + ", " + act);
             callSetActivityInstMsg(OP_SET_ACT_INST, mSlotId, act);
@@ -169,6 +186,12 @@ public class StkAppService extends Service implements Runnable {
                     mImmediateDialogInstance);
             return mImmediateDialogInstance;
         }
+        /*UNISOC: Feature bug for Stk Feature @{*/
+        final synchronized void reset(){
+            mCurrentMenuCmd = null;
+            mIdleModeTextCmd = null;
+        }
+        /*UNISOC: @}*/
     }
 
     private volatile Looper mServiceLooper;
@@ -273,9 +296,81 @@ public class StkAppService extends Service implements Runnable {
     // Notification channel containing all mobile service messages notifications.
     private static final String STK_NOTIFICATION_CHANNEL_ID = "mobileServiceMessages";
 
-    private static final String LOG_TAG = new Object(){}.getClass().getEnclosingClass().getName();
+    private static final String LOG_TAG = "StkAppService";
 
     static final String SESSION_ENDED = "session_ended";
+
+    // For bug 1466545
+    static final String CARD_ABSENT = "card_absent";
+    /*UNISOC: Feature for orange Feature patch SPCSS00430242 @{*/
+    static final String CLOSE_DIALOG_ACTIVITY =
+            "android.intent.action.CLOSE_DIALOG_ACTIVITY";
+    /*UNISOC: @}*/
+
+    /*UNISOC: bug for black screen @{*/
+    static final int OP_DELAY_TO_CHECK_USER_UNLOCK = 500;
+    private static final int DELAY_TO_CHECK_USER_UNLOCK_TIME = 3 * 1000;
+    private static final int DELAY_TO_CHECK_NUM = 5;
+    private UserManager mUserManager;
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for SET_UP_CALL @{ */
+    static final int SETUP_CALL_NO_CALL_1   = 0x00;
+    static final int SETUP_CALL_NO_CALL_2   = 0x01;
+    static final int SETUP_CALL_HOLD_CALL_1 = 0x02;
+    static final int SETUP_CALL_HOLD_CALL_2 = 0x03;
+    static final int SETUP_CALL_END_CALL_1  = 0x04;
+    static final int SETUP_CALL_END_CALL_2  = 0x05;
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for Idle Mode(case 27.22.4.22.2/4) @{ */
+    // notification can not display long text, so we start activity to support
+    static String idleModeText = "";
+    static Bitmap idleModeIcon = null;
+    static boolean idleModeIconSelfExplanatory = false;
+    private static final String STK_MESSAGE_ACTIVITY_NAME =
+            PACKAGE_NAME + ".StkMessageActivity";
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for REFRESH function @{*/
+    private static final int REFRESH_UICC_RESET = 0x04;
+    public Toast mToast = null;
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for Cucc function @{*/
+    static final String HOMEPRESSEDFLAG = "homepressed";
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+    private int mCurrentUserId = UserHandle.USER_OWNER;
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for query call forward when send ss @{*/
+    private Phone mPhone;
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature bug for LaunchBrowser @{*/
+    private boolean mCustomLaunchBrowserTR = false;
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for ModemAseert not display text Feature @{*/
+    private final static String ACTION_MODEM_CHANGE =
+            "com.android.modemassert.MODEM_STAT_CHANGE";
+    private final static String MODEM_STAT = "modem_stat";
+    private final static String MODEM_ASSERT = "modem_assert";
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature bug for home key @{*/
+    public static boolean mHomePressedFlg = false;
+    static final String SYSTEM_REASON = "reason";
+    static final String SYSTEM_HOME_KEY = "homekey";
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature bug @{*/
+    private static final String CALL_PACKAGE_NAME =
+            "com.android.dialer";
+    /*UNISOC: @}*/
+    static final String REFRESH_UNINSTALL = "refresh_uninstall";
 
     // Inner class used for queuing telephony messages (proactive commands,
     // session end) while the service is busy processing a previous message.
@@ -309,6 +404,28 @@ public class StkAppService extends Service implements Runnable {
         CatLog.d(LOG_TAG, "simCount: " + mSimCount);
         mStkService = new AppInterface[mSimCount];
         mStkContext = new StkContext[mSimCount];
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        IntentFilter intent = new IntentFilter();
+        intent.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        /* UNISOC: @}*/
+        /*UNISOC: Feature for ModemAseert not display text Feature @{*/
+        intent.addAction(ACTION_MODEM_CHANGE);
+        /*UNISOC: @}*/
+        /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+        intent.addAction(Intent.ACTION_USER_SWITCHED);
+        /*UNISOC: @}*/
+        /*UNISOC: Feature bug for home key @{ */
+        intent.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+        /*UNISOC: @}*/
+        registerReceiver(mReceiver, intent);
+        /*UNISOC: Feature for ModemAseert not display text Feature @{*/
+        String bootmode = SystemProperties.get("ro.bootmode");
+        CatLog.d(LOG_TAG, "bootmode: " + bootmode);
+        /*UNISOC: @}*/
+
+        /*UNISOC: bug for black screen @{*/
+        mUserManager = (UserManager) mContext.getSystemService(Context.USER_SERVICE);
+        /*UNISOC: @}*/
 
         for (i = 0; i < mSimCount; i++) {
             CatLog.d(LOG_TAG, "slotId: " + i);
@@ -316,6 +433,14 @@ public class StkAppService extends Service implements Runnable {
             mStkContext[i] = new StkContext();
             mStkContext[i].mSlotId = i;
             mStkContext[i].mCmdsQ = new LinkedList<DelayedCmd>();
+            /*UNISOC: Feature for ModemAseert not display text Feature @{*/
+            if(bootmode.equalsIgnoreCase("panic") || bootmode.equalsIgnoreCase("wdgreboot")
+                    || bootmode.equalsIgnoreCase("apwdgreboot")
+                    || bootmode.equalsIgnoreCase("special")
+                    || bootmode.equalsIgnoreCase("unknowreboot")) {
+                System.setProperty("gsm.stk.modem.recovery" + i, "1");
+            }
+            /*UNISOC: @}*/
         }
 
         Thread serviceThread = new Thread(null, this, "Stk App Service");
@@ -337,7 +462,9 @@ public class StkAppService extends Service implements Runnable {
             CatLog.d(LOG_TAG, "StkAppService onStart args is null so return");
             return;
         }
-
+        /*UNISOC: Feature for Cucc function @{*/
+        CatLog.d(LOG_TAG, "StkAppService onStart is Cucc: " + isCuccOperator());
+        /*UNISOC: @}*/
         int op = args.getInt(OPCODE);
         int slotId = 0;
         int i = 0;
@@ -350,6 +477,11 @@ public class StkAppService extends Service implements Runnable {
             if (mStkService[slotId] == null) {
                 CatLog.d(LOG_TAG, "mStkService is: " + mStkContext[slotId].mStkServiceState);
                 mStkContext[slotId].mStkServiceState = STATE_NOT_EXIST;
+                 /* UNISOC: Feature for Cucc function @{ */
+                if(isCuccOperator()){
+                    StkAppInstaller.unInstall(mContext,slotId);
+                }
+                /*UNISOC: @}*/
                 //Check other StkService state.
                 //If all StkServices are not available, stop itself and uninstall apk.
                 for (i = PhoneConstants.SIM_ID_1; i < mSimCount; i++) {
@@ -364,8 +496,14 @@ public class StkAppService extends Service implements Runnable {
                 mStkContext[slotId].mStkServiceState = STATE_EXIST;
             }
             if (i == mSimCount) {
+                /* UNISOC: Feature for Cucc function @{ */
+                if(!isCuccOperator() &&
+                        !(mContext.getResources().getBoolean(R.bool.config_show_specific_name))){
+                    StkAppInstaller.unInstall(mContext);
+                }
+                /*UNISOC: @}*/
                 stopSelf();
-                StkAppInstaller.unInstall(mContext);
+                //StkAppInstaller.unInstall(mContext);
                 return;
             }
         }
@@ -375,6 +513,13 @@ public class StkAppService extends Service implements Runnable {
         Message msg = mServiceHandler.obtainMessage();
         msg.arg1 = op;
         msg.arg2 = slotId;
+        /*UNISOC: Feature for query call forward when send ss @{*/
+        if(msg.arg1 == OP_CMD){
+            mPhone = PhoneFactory.getPhone(slotId);
+            CatLog.d(this, "get mPhone");
+        }
+        /*UNISOC: @}*/
+
         switch(msg.arg1) {
         case OP_CMD:
             msg.obj = args.getParcelable(CMD_MSG);
@@ -403,12 +548,22 @@ public class StkAppService extends Service implements Runnable {
     @Override
     public void onDestroy() {
         CatLog.d(LOG_TAG, "onDestroy()");
+        /*UNISOC: Feature for REFRESH function @{*/
+        if(mToast != null){
+            mToast.cancel();
+        }
+        /*UNISOC: @}*/
         unregisterUserActivityReceiver();
         unregisterProcessObserver();
         unregisterLocaleChangeReceiver();
         sInstance = null;
         waitForLooper();
         mServiceLooper.quit();
+        /*UNISOC: Feature porting for Stk Feature @{*/
+        if (mReceiver != null) {
+            unregisterReceiver(mReceiver);
+        }
+        /*UNISOC: @}*/
     }
 
     @Override
@@ -564,7 +719,9 @@ public class StkAppService extends Service implements Runnable {
                 }
                 CatLog.d(LOG_TAG, "handleMessage OP_LAUNCH_APP - mCmdInProgress[" +
                         mStkContext[slotId].mCmdInProgress + "]");
-
+                /*UNISOC: Feature bug for home key @{*/
+                mHomePressedFlg = false;
+                /*UNISOC: @}*/
                 //If there is a pending activity for the slot id,
                 //just finish it and create a new one to handle the pending command.
                 cleanUpInstanceStackBySlot(slotId);
@@ -577,6 +734,20 @@ public class StkAppService extends Service implements Runnable {
             case OP_CMD:
                 CatLog.d(LOG_TAG, "[OP_CMD]");
                 CatCmdMessage cmdMsg = (CatCmdMessage) msg.obj;
+                /*UNISOC: Feature for orange Feature @{*/
+                //unisoc patch SPCSS00430242 begin
+                if (mContext.getResources().getBoolean(R.bool.config_support_authentification)) {
+                    if (isStkDialogActivated() && cmdMsg.getCmdType().value()
+                            == AppInterface.CommandType.DISPLAY_TEXT.value()) {
+                        CatLog.d(LOG_TAG, "[OP_CMD] the second display_text slotId: " + slotId);
+                        Intent intent = new Intent(CLOSE_DIALOG_ACTIVITY);
+                        intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+                        intent.putExtra(SLOT_ID, slotId);
+                        mContext.sendBroadcast(intent);
+                    }
+                }
+                //unisoc patch SPCSS00430242 end
+                /*UNISOC: @}*/
                 // There are two types of commands:
                 // 1. Interactive - user's response is required.
                 // 2. Informative - display a message, no interaction with the user.
@@ -620,12 +791,23 @@ public class StkAppService extends Service implements Runnable {
                 CatLog.d(LOG_TAG, " OP_BOOT_COMPLETED");
                 int i = 0;
                 for (i = PhoneConstants.SIM_ID_1; i < mSimCount; i++) {
+                     /* UNISOC: Feature for Cucc function @{ */
+                    if(isCuccOperator() && mStkContext[i].mMainCmd == null){
+                        StkAppInstaller.unInstall(mContext,i);
+                    }
+                    /*UNISOC: @}*/
                     if (mStkContext[i].mMainCmd != null) {
                         break;
                     }
                 }
                 if (i == mSimCount) {
-                    StkAppInstaller.unInstall(mContext);
+                     /* UNISOC: Feature for Cucc function @{ */
+                    //StkAppInstaller.unInstall(mContext);
+                    if(!isCuccOperator()
+                            && !(mContext.getResources().getBoolean(R.bool.config_show_specific_name))){
+                        StkAppInstaller.unInstall(mContext);
+                    }
+                    /*UNISOC: @}*/
                 }
                 break;
             case OP_DELAYED_MSG:
@@ -710,6 +892,11 @@ public class StkAppService extends Service implements Runnable {
                     checkForSetupEvent(USER_ACTIVITY_EVENT, null, slot);
                 }
                 break;
+            /*UNISOC: bug for black screen @{*/
+            case OP_DELAY_TO_CHECK_USER_UNLOCK:
+                launchTextDialog(slotId);
+                break;
+            /*UNISOC: @}*/
             }
         }
 
@@ -723,17 +910,50 @@ public class StkAppService extends Service implements Runnable {
                 cancelIdleText(slotId);
                 mStkContext[slotId].mCurrentMenu = null;
                 mStkContext[slotId].mMainCmd = null;
-                mStkService[slotId] = null;
-                if (isAllOtherCardsAbsent(slotId)) {
-                    CatLog.d(LOG_TAG, "All CARDs are ABSENT");
-                    StkAppInstaller.unInstall(mContext);
-                    stopSelf();
+                /*UNISOC: Feature bug for Stk Feature @{*/
+                mNotificationManager.cancel(getNotificationId(slotId));
+                /*UNISOC: @}*/
+                /*UNISOC: Feature for Cucc function @{*/
+                if(isCuccOperator()){
+                    StkAppInstaller.unInstall(mContext,slotId);
                 }
+                /*UNISOC: @}*/
+
+                /*UNISOC: Feature bug611551 for Stk Feature @{*/
+                /* Turn off/on sim card, StkService in FW will be recreate but App handle the old object */
+                mStkService[slotId] = null;
+                CatLog.d(LOG_TAG, "mStkContext[slotId]: " + mStkContext[slotId]);
+                mStkContext[slotId].reset();
+                /*UNISOC: @}*/
+
+                /*UNISOC: Bug for 1395367 @{*/
+                Activity dialog = mStkContext[slotId].getPendingDialogInstance();
+                Activity activity = mStkContext[slotId].getPendingActivityInstance();
+                if (dialog != null) {
+                    dialog.finish();
+                    CatLog.d(LOG_TAG, "dialog.finish");
+                    mStkContext[slotId].mDialogInstance = null;
+                } else if (activity != null) {
+                    activity.finish();
+                    CatLog.d(LOG_TAG, "activity.finish");
+                    mStkContext[slotId].mActivityInstance = null;
+                }
+                /*UNISOC: @}*/
+                /* UNISOC: For bug 1466545 @{ */
+                Intent intent = new Intent(CARD_ABSENT);
+                intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+                intent.putExtra(SLOT_ID, slotId);
+                LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
+                /* UNISOC: For bug 1466545 @} */
+
             } else {
                 IccRefreshResponse state = new IccRefreshResponse();
                 state.refreshResult = args.getInt(AppInterface.REFRESH_RESULT);
 
                 CatLog.d(LOG_TAG, "Icc Refresh Result: "+ state.refreshResult);
+                /*UNISOC: Feature for REFRESH function @{*/
+                launchRefreshMsg(slotId);
+                /*UNISOC: @}*/
                 if ((state.refreshResult == IccRefreshResponse.REFRESH_RESULT_INIT) ||
                     (state.refreshResult == IccRefreshResponse.REFRESH_RESULT_RESET)) {
                     // Clear Idle Text
@@ -745,7 +965,7 @@ public class StkAppService extends Service implements Runnable {
     /*
      * Check if all SIMs are absent except the id of slot equals "slotId".
      */
-    private boolean isAllOtherCardsAbsent(int slotId) {
+     boolean isAllOtherCardsAbsent(int slotId) {
         TelephonyManager mTm = (TelephonyManager) mContext.getSystemService(
                 Context.TELEPHONY_SERVICE);
         int i = 0;
@@ -834,6 +1054,9 @@ public class StkAppService extends Service implements Runnable {
         if (mStkContext[slotId].mCurrentCmd == null) {
             return;
         }
+        /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+        mStkContext[slotId].mDisplayTextResponsed = true;
+        /*UNISOC: @}*/
         CatResponseMessage resMsg = new CatResponseMessage(mStkContext[slotId].mCurrentCmd);
         CatLog.d(this, "SCREEN_BUSY");
         resMsg.setResultCode(ResultCode.TERMINAL_CRNTLY_UNABLE_TO_PROCESS);
@@ -939,6 +1162,9 @@ public class StkAppService extends Service implements Runnable {
         mStkContext[slotId].mIsMenuPending = false;
         mStkContext[slotId].mIsDialogPending = false;
         mStkContext[slotId].mNoResponseFromUser = false;
+        /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+        mStkContext[slotId].mDisplayTextResponsed = false;
+        /*UNISOC: @}*/
 
         if (mStkContext[slotId].mMainCmd == null) {
             CatLog.d(LOG_TAG, "[handleSessionEnd][mMainCmd is null!]");
@@ -958,6 +1184,7 @@ public class StkAppService extends Service implements Runnable {
 
         // Send a local broadcast as a notice that this service handled the session end event.
         Intent intent = new Intent(SESSION_ENDED);
+        intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
         intent.putExtra(SLOT_ID, slotId);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
@@ -966,11 +1193,11 @@ public class StkAppService extends Service implements Runnable {
         } else {
             mStkContext[slotId].mCmdInProgress = false;
         }
-        // In case a launch browser command was just confirmed, launch that url.
-        if (mStkContext[slotId].launchBrowser) {
-            mStkContext[slotId].launchBrowser = false;
-            launchBrowser(mStkContext[slotId].mBrowserSettings);
-        }
+//        // In case a launch browser command was just confirmed, launch that url.
+//        if (mStkContext[slotId].launchBrowser) {
+//            mStkContext[slotId].launchBrowser = false;
+//            launchBrowser(mStkContext[slotId].mBrowserSettings);
+//        }
     }
 
     // returns true if any Stk related activity already has focus on the screen
@@ -979,10 +1206,11 @@ public class StkAppService extends Service implements Runnable {
                 .getSystemService(ACTIVITY_SERVICE);
         String currentPackageName = null;
         List<RunningTaskInfo> tasks = mActivityManager.getRunningTasks(1);
-        if (tasks == null || tasks.get(0).topActivity == null) {
+        if (tasks == null || tasks.isEmpty() || tasks.get(0).topActivity == null) {
             return false;
         }
         currentPackageName = tasks.get(0).topActivity.getPackageName();
+        CatLog.d(LOG_TAG, "currentPackageName : " + currentPackageName);
         if (null != currentPackageName) {
             return currentPackageName.equals(PACKAGE_NAME);
         }
@@ -1032,13 +1260,60 @@ public class StkAppService extends Service implements Runnable {
         case DISPLAY_TEXT:
             TextMessage msg = cmdMsg.geTextMessage();
             waitForUsersResponse = msg.responseNeeded;
+            /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+            mStkContext[slotId].mDisplayTextResponsed = false;
+            if( mCurrentUserId != UserHandle.USER_OWNER){
+                CatLog.d(LOG_TAG, "secondary users,need send TR");
+                sendResponse(RES_ID_CONFIRM, slotId, true);
+                break;
+            }
+             /*UNISOC: @}*/
             if (mStkContext[slotId].lastSelectedItem != null) {
                 msg.title = mStkContext[slotId].lastSelectedItem;
             } else if (mStkContext[slotId].mMainCmd != null){
-                if (!getResources().getBoolean(R.bool.show_menu_title_only_on_menu)) {
+                if (getResources().getBoolean(R.bool.show_menu_title_only_on_menu)) {
                     msg.title = mStkContext[slotId].mMainCmd.getMenu().title;
                 }
             }
+            /*UNISOC: Feature for ModemAseert not display text Feature @{*/
+            CatLog.d(LOG_TAG, " Is Modem Assert Happen: " +
+                    System.getProperty("gsm.stk.modem.recovery" + slotId));
+            if("1".equals(System.getProperty("gsm.stk.modem.recovery" + slotId))) {
+                sendResponse(RES_ID_CONFIRM, slotId, true);
+                break;
+            }
+
+            /*UNISOC: Bug for 1390516 @{ */
+            boolean isOtherCardReady = false;
+            TelephonyManager tm = (TelephonyManager) mContext.getSystemService(
+                    Context.TELEPHONY_SERVICE);
+            for (int i = 0; i < mSimCount; i++) {
+                if ((i != slotId) && (tm.getSimState(i) != TelephonyManager.SIM_STATE_ABSENT)
+                        && (!isCardReady(mContext, i))) {
+                    CatLog.d(LOG_TAG, "The other card is still locked by pin code");
+                    isOtherCardReady = true;
+                }
+            }
+            if (isOtherCardReady) {
+                sendResponse(RES_ID_CONFIRM, slotId, true);
+                break;
+            }
+            /*UNISOC: @}*/
+
+            /*UNISOC: @}*/
+            /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+            if (isAirPlaneModeOn()) {
+                CatLog.d(LOG_TAG, "Air Plane Mode On");
+                sendResponse(RES_ID_CONFIRM, slotId, false);
+                break;
+            }
+            /*UNISOC: @}*/
+            /*UNISOC: Feature bug @{*/
+            if (isBusyOnCall() && isCallInStack()){
+                sendResponse(RES_ID_CONFIRM, slotId, false);
+                break;
+            }
+            /*UNISOC: @}*/
             //If we receive a low priority Display Text and the device is
             // not displaying any STK related activity and the screen is not idle
             // ( that is, device is in an interactive state), then send a screen busy
@@ -1047,7 +1322,8 @@ public class StkAppService extends Service implements Runnable {
             // proactive command (Refer to ETSI TS 102 384 section 27.22.4.1.4.4.2).
             if (!(msg.isHighPriority || mStkContext[slotId].mMenuIsVisible
                     || mStkContext[slotId].mDisplayTextDlgIsVisibile || isTopOfStack())) {
-                if(!isScreenIdle()) {
+                /*UNISOC: Feature for Idle Mode(case 27.22.4.22.2/4) @{ */
+                if(isBusyOnCall()) {
                     CatLog.d(LOG_TAG, "Screen is not idle");
                     sendScreenBusyResponse(slotId);
                 } else {
@@ -1059,6 +1335,9 @@ public class StkAppService extends Service implements Runnable {
             break;
         case SELECT_ITEM:
             CatLog.d(LOG_TAG, "SELECT_ITEM +");
+            /*UNISOC: Feature bug @{*/
+            waitForUsersResponse = false;
+            /*UNISOC: @}*/
             mStkContext[slotId].mCurrentMenuCmd = mStkContext[slotId].mCurrentCmd;
             mStkContext[slotId].mCurrentMenu = cmdMsg.getMenu();
             launchMenuActivity(cmdMsg.getMenu(), slotId);
@@ -1075,20 +1354,52 @@ public class StkAppService extends Service implements Runnable {
                 CatLog.d(LOG_TAG, "removeMenu() - Uninstall App");
                 mStkContext[slotId].mCurrentMenu = null;
                 mStkContext[slotId].mMainCmd = null;
+                /* UNISOC: Feature for Cucc function @{ */
+                if (isCuccOperator()) {
+                    StkAppInstaller.unInstall(mContext,slotId);
+                }
+                /*UNISOC: @}*/
                 //Check other setup menu state. If all setup menu are removed, uninstall apk.
                 for (i = PhoneConstants.SIM_ID_1; i < mSimCount; i++) {
-                    if (i != slotId && mStkContext[i].mSetupMenuState != STATE_NOT_EXIST) {
+                    /* UNISOC: Feature bug @{ */
+                    if (i != slotId
+                            && (mStkContext[i].mSetupMenuState == STATE_UNKNOWN
+                            || mStkContext[i].mSetupMenuState == STATE_EXIST) && mStkContext[i].mCurrentMenu != null) {
+                        /*UNISOC: @}*/
                         CatLog.d(LOG_TAG, "Not Uninstall App:" + i + ","
                                 + mStkContext[i].mSetupMenuState);
                         break;
                     }
                 }
                 if (i == mSimCount) {
-                    StkAppInstaller.unInstall(mContext);
+                    //StkAppInstaller.unInstall(mContext);
+                    /* UNISOC: Feature for Cucc function @{ */
+                    if(!isCuccOperator()){
+                        CatLog.d(LOG_TAG, "unstall App");
+                        StkAppInstaller.unInstall(mContext);
+                    }
+                    /*UNISOC: @}*/
                 }
             } else {
-                CatLog.d(LOG_TAG, "install App");
-                StkAppInstaller.install(mContext);
+                /* UNISOC: Feature for Cucc function @{ */
+                //StkAppInstaller.install(mContext);
+                if (!isAirPlaneModeOn()) {
+                    if (isCuccOperator()) {
+                        if (isCardReady(mContext, slotId)) {
+                            StkAppInstaller.install(mContext, slotId);
+                        }
+                    } else {
+                        if (isCardReady(mContext)) {
+                            if (mContext.getResources().getBoolean(R.bool.config_show_specific_name)) {
+                                StkAppInstaller.unInstall(mContext);
+                                StkAppInstaller.install(mContext);
+                            } else {
+                                StkAppInstaller.install(mContext);
+                            }
+                        }
+                    }
+                }
+                /*UNISOC: @}*/
             }
             if (mStkContext[slotId].mMenuIsVisible) {
                 launchMenuActivity(null, slotId);
@@ -1107,7 +1418,9 @@ public class StkAppService extends Service implements Runnable {
             }
             mStkContext[slotId].mCurrentCmd = mStkContext[slotId].mMainCmd;
             if (mStkContext[slotId].mIdleModeTextCmd != null) {
-                if (mStkContext[slotId].mIdleModeTextVisible || isScreenIdle()) {
+                /*UNISOC: Feature for Idle Mode(case 27.22.4.22.2/4) @{*/
+                if ((mStkContext[slotId].mIdleModeTextCmd != null) && /*isScreenIdle()*/!isBusyOnCall()) {
+                /*UNISOC: @}*/
                     CatLog.d(this, "set up idle mode");
                     launchIdleText(slotId);
                 } else {
@@ -1117,15 +1430,26 @@ public class StkAppService extends Service implements Runnable {
             break;
         case SEND_DTMF:
         case SEND_SMS:
-        case REFRESH:
+        //case REFRESH:
         case RUN_AT:
-        case SEND_SS:
+        //case SEND_SS:
         case SEND_USSD:
         case GET_CHANNEL_STATUS:
             waitForUsersResponse = false;
             launchEventMessage(slotId);
             break;
+        /*UNISOC: Feature for query call forward when send ss @{*/
+        case SEND_SS:
+            waitForUsersResponse = false;
+            launchEventMessage(slotId);
+            mPhone.getCallForwardingOption(CommandsInterface.CF_REASON_UNCONDITIONAL,null);
+            break;
+        /*UNISOC: @}*/
         case LAUNCH_BROWSER:
+            /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+            mStkContext[slotId].mDisplayTextResponsed = false;
+            /*UNISOC: @}*/
+
             // The device setup process should not be interrupted by launching browser.
             if (Settings.Global.getInt(mContext.getContentResolver(),
                     Settings.Global.DEVICE_PROVISIONED, 0) == 0) {
@@ -1144,11 +1468,15 @@ public class StkAppService extends Service implements Runnable {
 
             mStkContext[slotId].mBrowserSettings =
                     mStkContext[slotId].mCurrentCmd.getBrowserSettings();
-            if (!isUrlAvailableToLaunchBrowser(mStkContext[slotId].mBrowserSettings)) {
+            /*UNISOC: Feature for LAUNCH_BROWSER, all secondary users @{ */
+            if (!isUrlAvailableToLaunchBrowser(mStkContext[slotId].mBrowserSettings) &&
+                    mStkContext[slotId].mBrowserSettings.mode != LaunchBrowserMode.LAUNCH_NEW_BROWSER) {
+            /*UNISOC: @}*/
                 CatLog.d(this, "Browser url property is not set - send error");
                 sendResponse(RES_ID_ERROR, slotId, true);
             } else {
                 TextMessage alphaId = mStkContext[slotId].mCurrentCmd.geTextMessage();
+                CatLog.d(this, "alphaId: " + alphaId);
                 if ((alphaId == null) || TextUtils.isEmpty(alphaId.text)) {
                     // don't need user confirmation in this case
                     // just launch the browser or spawn a new tab
@@ -1167,7 +1495,10 @@ public class StkAppService extends Service implements Runnable {
                 mesg.text = getResources().getString(R.string.default_setup_call_msg);
             }
             CatLog.d(this, "SET_UP_CALL mesg.text " + mesg.text);
-            launchConfirmationDialog(mesg, slotId);
+            /*UNISOC: Feature for SET_UP_CALL @{ */
+            //launchConfirmationDialog(mesg, slotId);
+            processSetupCall(slotId);
+            /*UNISOC: @}*/
             break;
         case PLAY_TONE:
             handlePlayTone(slotId);
@@ -1182,9 +1513,9 @@ public class StkAppService extends Service implements Runnable {
 
             if ((m != null) && (m.text == null)) {
                 switch(cmdMsg.getCmdType()) {
-                case CLOSE_CHANNEL:
-                    m.text = getResources().getString(R.string.default_close_channel_msg);
-                    break;
+//                case CLOSE_CHANNEL:
+//                    m.text = getResources().getString(R.string.default_close_channel_msg);
+//                    break;
                 case RECEIVE_DATA:
                     m.text = getResources().getString(R.string.default_receive_data_msg);
                     break;
@@ -1196,7 +1527,7 @@ public class StkAppService extends Service implements Runnable {
             /*
              * Display indication in the form of a toast to the user if required.
              */
-            launchEventMessage(slotId);
+            launchEventMessage(slotId, m);
             break;
         case SET_UP_EVENT_LIST:
             replaceEventList(slotId);
@@ -1205,6 +1536,29 @@ public class StkAppService extends Service implements Runnable {
                 checkForSetupEvent(IDLE_SCREEN_AVAILABLE_EVENT, null, slotId);
             }
             break;
+        /*UNISOC: Feature for REFRESH function @{*/
+        case REFRESH:
+            int cmdQualifier = mStkContext[slotId].mCurrentCmd.getCommandQualifier();
+            CatLog.d(LOG_TAG, "REFRESH cmdQualifier: " + cmdQualifier);
+            if (cmdQualifier == REFRESH_UICC_RESET) {
+                /* UNISOC: Feature for Cucc function @{ */
+                Intent intent = new Intent(REFRESH_UNINSTALL);
+                intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+                LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
+                if(isCuccOperator()){
+                    StkAppInstaller.unInstall(mContext,slotId);
+                }
+                /*UNISOC: @}*/
+                if (isAllOtherCardsAbsent(slotId)) {
+                    if(!isCuccOperator()){
+                        StkAppInstaller.unInstall(mContext);
+                    }
+                }
+                mStkContext[slotId].mCurrentMenu = null;
+                mStkContext[slotId].mMainCmd = null;
+            }
+            break;
+        /*UNISOC: @}*/
         }
 
         if (!waitForUsersResponse) {
@@ -1229,7 +1583,8 @@ public class StkAppService extends Service implements Runnable {
                 // This should never happen (we should be responding only to a message
                 // that arrived from StkService). It has to exist by this time
                 CatLog.d(LOG_TAG, "Exception! mStkService is null when we need to send response.");
-                throw new RuntimeException("mStkService is null when we need to send response");
+                //throw new RuntimeException("mStkService is null when we need to send response");
+                return;
             }
         }
 
@@ -1289,23 +1644,43 @@ public class StkAppService extends Service implements Runnable {
                 } else {
                     resMsg.setResultCode(ResultCode.UICC_SESSION_TERM_BY_USER);
                 }
+                /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+                mStkContext[slotId].mDisplayTextResponsed = true;
+                /*UNISOC: @}*/
                 break;
             case LAUNCH_BROWSER:
-                resMsg.setResultCode(confirmed ? ResultCode.OK
-                        : ResultCode.UICC_SESSION_TERM_BY_USER);
+                /*UNISOC: Feature bug for LaunchBrowser @{*/
+                mCustomLaunchBrowserTR = getBooleanCarrierConfig(CarrierConfigManagerEx.
+                        KEY_STK_DIFFERENT_LAUNCH_BROWSER_TR, slotId);
                 if (confirmed) {
+                    resMsg.setResultCode(ResultCode.OK);
                     mStkContext[slotId].launchBrowser = true;
                     mStkContext[slotId].mBrowserSettings =
                             mStkContext[slotId].mCurrentCmd.getBrowserSettings();
+                } else {
+                    if (mCustomLaunchBrowserTR) {
+                        resMsg.setResultCode(ResultCode.USER_NOT_ACCEPT);
+                    } else {
+                        resMsg.setResultCode(ResultCode.UICC_SESSION_TERM_BY_USER);
+                    }
                 }
+                /*UNISOC: @}*/
                 break;
             case SET_UP_CALL:
+                /*UNISOC: Feature for SET_UP_CALL @{ */
+                if (confirmed) {
+                    processSetupCallResponse(slotId, true);
+                    return;
+                }
+                // Cancel
+                mStkContext[slotId].mSetupCallInProcess = false;
+                /*UNISOC: @}*/
                 resMsg.setResultCode(ResultCode.OK);
                 resMsg.setConfirmation(confirmed);
-                if (confirmed) {
-                    launchEventMessage(slotId,
-                            mStkContext[slotId].mCurrentCmd.getCallSettings().callMsg);
-                }
+//              if (confirmed) {
+//                  launchEventMessage(slotId,
+//                          mStkContext[slotId].mCurrentCmd.getCallSettings().callMsg);
+//              }
                 break;
             }
             break;
@@ -1326,10 +1701,16 @@ public class StkAppService extends Service implements Runnable {
             // Clear message after delay, successful) expects result code OK.
             // If the command qualifier specifies no user response is required
             // then send OK instead of NO_RESPONSE_FROM_USER
-            if ((mStkContext[slotId].mCurrentCmd.getCmdType().value() ==
-                    AppInterface.CommandType.DISPLAY_TEXT.value())
-                    && (mStkContext[slotId].mCurrentCmd.geTextMessage().userClear == false)) {
-                resMsg.setResultCode(ResultCode.OK);
+            /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+            if (mStkContext[slotId].mCurrentCmd.getCmdType().value() ==
+                    AppInterface.CommandType.DISPLAY_TEXT.value()) {
+                if (mStkContext[slotId].mCurrentCmd.geTextMessage().userClear == false) {
+                    resMsg.setResultCode(ResultCode.OK);
+                } else {
+                    resMsg.setResultCode(ResultCode.NO_RESPONSE_FROM_USER);
+                }
+                mStkContext[slotId].mDisplayTextResponsed = true;
+            /*UNISOC: @}*/
             } else {
                 resMsg.setResultCode(ResultCode.NO_RESPONSE_FROM_USER);
             }
@@ -1389,6 +1770,14 @@ public class StkAppService extends Service implements Runnable {
                     mStkContext[slotId].mCurrentCmd.getCmdType().name() + "]");
         }
         mStkService[slotId].onCmdResponse(resMsg);
+        /*UNISOC: Feature for LAUNCH_BROWSER @{*/
+        //In case a launch browser command was just after send terminal response, launch that url
+        if ((mStkContext[slotId].mCurrentCmd.getCmdType().value() ==
+                AppInterface.CommandType.LAUNCH_BROWSER.value()) && mStkContext[slotId].launchBrowser) {
+            mStkContext[slotId].launchBrowser = false;
+            launchBrowser(mStkContext[slotId].mBrowserSettings);
+        }
+        /*UNISOC: @}*/
     }
 
     /**
@@ -1495,6 +1884,15 @@ public class StkAppService extends Service implements Runnable {
     }
 
     private void launchMenuActivity(Menu menu, int slotId) {
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        boolean isAirPlaneModeOn = Settings.Global.getInt(getBaseContext().getContentResolver(),
+                Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+        CatLog.d(LOG_TAG, "launchMenuActivity isAirPlaneModeOn = " + isAirPlaneModeOn);
+        if(isAirPlaneModeOn){
+            mStkContext[slotId].mMenuState = StkMenuActivity.STATE_MAIN;
+            return;
+        }
+        /*UNISOC: @}*/
         Intent newIntent = new Intent(Intent.ACTION_VIEW);
         String targetActivity = STK_MENU_ACTIVITY_NAME;
         String uriString = STK_MENU_URI + System.currentTimeMillis();
@@ -1524,6 +1922,13 @@ public class StkAppService extends Service implements Runnable {
             intentFlags |= getFlagActivityNoUserAction(InitiatedByUserAction.unknown, slotId);
             newIntent.putExtra("STATE", StkMenuActivity.STATE_SECONDARY);
             mStkContext[slotId].mMenuState = StkMenuActivity.STATE_SECONDARY;
+            /* UNISOC: Feature bug @{ */
+            if ((mHomePressedFlg && !isTopOfStack())
+                    || (isBusyOnCall() && isCallInStack())) {
+                CatLog.d(LOG_TAG, "Home key Pressed and current activity is not stk menu,no need to launch");
+                return;
+            }
+            /*UNISOC: @}*/
         }
         newIntent.putExtra(SLOT_ID, slotId);
         newIntent.setData(uriData);
@@ -1537,7 +1942,16 @@ public class StkAppService extends Service implements Runnable {
         String uriString = STK_INPUT_URI + System.currentTimeMillis();
         //Set unique URI to create a new instance of activity for different slotId.
         Uri uriData = Uri.parse(uriString);
+        /*UNISOC: Feature for orange Feature patch SPCSS00430239 @{*/
+        if (mContext.getResources().getBoolean(R.bool.config_support_authentification)) {
+            mNotificationManager.cancel(getNotificationId(slotId));
+        }
         Input input = mStkContext[slotId].mCurrentCmd.geInput();
+        String title = null;
+        if (input != null) {
+            title = input.text;
+        }
+        /*UNISOC: @}*/
 
         CatLog.d(LOG_TAG, "launchInputActivity, slotId: " + slotId);
         newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
@@ -1547,21 +1961,57 @@ public class StkAppService extends Service implements Runnable {
         newIntent.putExtra(SLOT_ID, slotId);
         newIntent.setData(uriData);
 
-        if (input != null) {
-            notifyUserIfNecessary(slotId, input.text);
+        /*UNISOC: Feature for orange Feature patch SPCSS00430239@{*/
+        if (mContext.getResources().getBoolean(R.bool.config_support_authentification) &&
+                isScreenLocked() && isScreenSecure()) {
+            CatLog.d(LOG_TAG, "isScreenLocked : " + isScreenLocked()
+                    + " isScreenSecure :" + isScreenSecure());
+            wakeUp();
+            buildNotification(newIntent, title, slotId);
+        } else {
+            if (input != null) {
+                notifyUserIfNecessary(newIntent, slotId, input.text);
+            }
         }
+        /*UNISOC: @}*/
         startActivity(newIntent);
     }
 
     private void launchTextDialog(int slotId) {
         CatLog.d(LOG_TAG, "launchTextDialog, slotId: " + slotId);
+        /*UNISOC: bug for black screen @{*/
+        if (!(mContext.getResources().getBoolean(R.bool.config_support_authentification))) {
+            if (!mUserManager.isUserUnlocked()) {
+                mStkContext[slotId].mDelayToCheckTime++;
+                CatLog.d(LOG_TAG, "launchTextDialog, mDelayToCheckTime = "
+                        + mStkContext[slotId].mDelayToCheckTime);
+                if(mStkContext[slotId].mDelayToCheckTime >= DELAY_TO_CHECK_NUM){
+                    mStkContext[slotId].mDelayToCheckTime = 0;
+                    sendResponse(RES_ID_CONFIRM, slotId, false);
+                } else {
+                    delayToCheckUserUnlock(slotId);
+                }
+                return;
+            }
+        }
+        /*UNISOC: @}*/
+        mStkContext[slotId].mDelayToCheckTime = 0;
         Intent newIntent = new Intent();
         String targetActivity = STK_DIALOG_ACTIVITY_NAME;
         int action = getFlagActivityNoUserAction(InitiatedByUserAction.unknown, slotId);
         String uriString = STK_DIALOG_URI + System.currentTimeMillis();
         //Set unique URI to create a new instance of activity for different slotId.
         Uri uriData = Uri.parse(uriString);
+        /*UNISOC: Feature for orange Feature patch SPCSS00430239 @{*/
+        if (mContext.getResources().getBoolean(R.bool.config_support_authentification)) {
+            mNotificationManager.cancel(getNotificationId(slotId));
+        }
         TextMessage textMessage = mStkContext[slotId].mCurrentCmd.geTextMessage();
+        String title = null;
+        if (textMessage != null) {
+            title = textMessage.text;
+        }
+        /*UNISOC: @}*/
 
         newIntent.setClassName(PACKAGE_NAME, targetActivity);
         newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
@@ -1571,10 +2021,21 @@ public class StkAppService extends Service implements Runnable {
         newIntent.putExtra("TEXT", textMessage);
         newIntent.putExtra(SLOT_ID, slotId);
 
-        if (textMessage != null) {
-            notifyUserIfNecessary(slotId, textMessage.text);
+        /*UNISOC: Feature for orange Feature patch SPCSS00430239 @{*/
+        if (mContext.getResources().getBoolean(R.bool.config_support_authentification)
+                && isScreenLocked() && isScreenSecure()) {
+            CatLog.d(LOG_TAG, "isScreenLocked : " + isScreenLocked()
+                    + " isScreenSecure : " + isScreenSecure());
+            wakeUp();
+            buildNotification(newIntent, title, slotId);
+        } else {
+            if (textMessage != null) {
+                notifyUserIfNecessary(newIntent, slotId, textMessage.text);
+            }
         }
+        /*UNISOC: @}*/
         startActivity(newIntent);
+        /*UNISOC: @}*/
         // For display texts with immediate response, send the terminal response
         // immediately. responseNeeded will be false, if display text command has
         // the immediate response tlv.
@@ -1583,7 +2044,7 @@ public class StkAppService extends Service implements Runnable {
         }
     }
 
-    private void notifyUserIfNecessary(int slotId, String message) {
+    private void notifyUserIfNecessary(Intent embededIntent, int slotId, String message) {
         createAllChannels();
 
         if (mStkContext[slotId].mNoResponseFromUser) {
@@ -1599,7 +2060,7 @@ public class StkAppService extends Service implements Runnable {
             // Display the notification on the keyguard screen
             // if user cannot see the message from the card right now because of it.
             // The notification can be dismissed if user removed the keyguard screen.
-            launchNotificationOnKeyguard(slotId, message);
+            launchNotificationOnKeyguard(embededIntent, slotId, message);
         } else if (!(pm.isInteractive() && isTopOfStack())) {
             // User might be doing something but it is not related to the SIM Toolkit.
             // Play the tone and do vibration in order to attract user's attention.
@@ -1625,7 +2086,8 @@ public class StkAppService extends Service implements Runnable {
         wakelock.release();
     }
 
-    private void launchNotificationOnKeyguard(int slotId, String message) {
+    private void launchNotificationOnKeyguard(Intent embededIntent, int slotId, String message) {
+        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, embededIntent, 0);
         Notification.Builder builder = new Notification.Builder(this, STK_NOTIFICATION_CHANNEL_ID);
 
         builder.setStyle(new Notification.BigTextStyle(builder).bigText(message));
@@ -1638,6 +2100,7 @@ public class StkAppService extends Service implements Runnable {
             builder.setContentTitle(menu.title);
         }
 
+        builder.setContentIntent(pendingIntent);
         builder.setSmallIcon(com.android.internal.R.drawable.stat_notify_sim_toolkit);
         builder.setOngoing(true);
         builder.setOnlyAlertOnce(true);
@@ -1697,13 +2160,15 @@ public class StkAppService extends Service implements Runnable {
      */
     public boolean isStkDialogActivated() {
         ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        ComponentName componentName = am.getAppTasks().get(0).getTaskInfo().topActivity;
-        if (componentName != null) {
-            String[] split = componentName.getClassName().split(Pattern.quote("."));
-            String topActivity = split[split.length - 1];
-            CatLog.d(LOG_TAG, "Top activity: " + topActivity);
-            if (TextUtils.equals(topActivity, StkDialogActivity.class.getSimpleName())) {
-                return true;
+        if (am != null && am.getAppTasks() != null && am.getAppTasks().size() > 1) {
+            ComponentName componentName = am.getAppTasks().get(0).getTaskInfo().topActivity;
+            if (componentName != null) {
+                String[] split = componentName.getClassName().split(Pattern.quote("."));
+                String topActivity = split[split.length - 1];
+                CatLog.d(LOG_TAG, "Top activity: " + topActivity);
+                if (TextUtils.equals(topActivity, StkDialogActivity.class.getSimpleName())) {
+                    return true;
+                }
             }
         }
         return false;
@@ -2033,12 +2498,21 @@ public class StkAppService extends Service implements Runnable {
         if (mStkContext[slotId].mCurrentCmd.hasIconLoadFailed() ||
                 msg.icon == null || !msg.iconSelfExplanatory) {
             tv.setText(msg.text);
+            tv.setTextColor(Color.BLACK);
         }
 
         toast.setView(v);
         toast.setDuration(Toast.LENGTH_LONG);
         toast.setGravity(Gravity.BOTTOM, 0, 0);
-        toast.show();
+        /*UNISOC: Feature for orange Feature @{*/
+        if (mContext.getResources().getBoolean(R.bool.config_support_authentification)) {
+            if (!TextUtils.isEmpty(tv.getText().toString())) {
+                toast.show();
+            }
+        } else {
+            toast.show();
+        }
+        /*UNISOC: @}*/
     }
 
     private void launchConfirmationDialog(TextMessage msg, int slotId) {
@@ -2127,8 +2601,20 @@ public class StkAppService extends Service implements Runnable {
                     + "] iconSelfExplanatory[" + msg.iconSelfExplanatory
                     + "] icon[" + msg.icon + "], sim id: " + slotId);
             CatLog.d(LOG_TAG, "Add IdleMode text");
-            PendingIntent pendingIntent = PendingIntent.getService(mContext, 0,
-                    new Intent(mContext, StkAppService.class), 0);
+            /*UNISOC: Feature for Idle Mode(case 27.22.4.22.2/4) @{ */
+//          notification can not display long text, so we start activity to support  @{*/
+//          PendingIntent pendingIntent = PendingIntent.getService(mContext, 0,
+//                    new Intent(mContext, StkAppService.class), 0);
+            Intent pendIntentData = new Intent();
+            pendIntentData.setClassName(PACKAGE_NAME, STK_MESSAGE_ACTIVITY_NAME);
+
+            idleModeText = msg.text;
+            idleModeIcon = msg.icon;
+            idleModeIconSelfExplanatory = msg.iconSelfExplanatory;
+
+            PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0,
+                    pendIntentData, PendingIntent.FLAG_UPDATE_CURRENT);
+            /*UNISOC: @}*/
             createAllChannels();
             final Notification.Builder notificationBuilder = new Notification.Builder(
                     StkAppService.this, STK_NOTIFICATION_CHANNEL_ID);
@@ -2219,25 +2705,27 @@ public class StkAppService extends Service implements Runnable {
         // If alpha identifier tlv is present and its data is null, play only tone
         // without showing user any information.
         // Alpha Id is Present, but the text data is null.
-        if ((toneMsg.text != null ) && (toneMsg.text.equals(""))) {
-            CatLog.d(this, "Alpha identifier data is null, play only tone");
-            showUser = false;
-        }
-        // Alpha Id is not present AND we need to show info to the user.
-        if (toneMsg.text == null && displayDialog) {
-            CatLog.d(this, "toneMsg.text " + toneMsg.text
-                    + " Starting ToneDialog activity with default message.");
-            toneMsg.text = getResources().getString(R.string.default_tone_dialog_msg);
-            showUser = true;
-        }
-        // Dont show user info, if config setting is true.
-        if (toneMsg.text == null && !displayDialog) {
-            CatLog.d(this, "config value stkNoAlphaUsrCnf is true");
-            showUser = false;
-        }
+        if (toneMsg != null) {
+            if ((toneMsg.text != null ) && (toneMsg.text.equals(""))) {
+                CatLog.d(this, "Alpha identifier data is null, play only tone");
+                showUser = false;
+            }
+            // Alpha Id is not present AND we need to show info to the user.
+            if (toneMsg.text == null && displayDialog) {
+                CatLog.d(this, "toneMsg.text " + toneMsg.text
+                        + " Starting ToneDialog activity with default message.");
+                toneMsg.text = getResources().getString(R.string.default_tone_dialog_msg);
+                showUser = true;
+            }
+            // Dont show user info, if config setting is true.
+            if (toneMsg.text == null && !displayDialog) {
+                CatLog.d(this, "config value stkNoAlphaUsrCnf is true");
+                showUser = false;
+            }
 
-        CatLog.d(this, "toneMsg.text: " + toneMsg.text + "showUser: " +showUser +
+            CatLog.d(this, "toneMsg.text: " + toneMsg.text + "showUser: " +showUser +
                 "displayDialog: " +displayDialog);
+        }
         playTone(showUser, slotId);
     }
 
@@ -2466,4 +2954,479 @@ public class StkAppService extends Service implements Runnable {
         }
         return true;
     }
+
+    /*UNISOC: Feature for REFRESH function @{*/
+    private void launchRefreshMsg(int slotId) {
+        if (mStkContext[slotId].mCurrentCmd == null) {
+            CatLog.d(this, "[stkapp] launchRefreshMsg and mCurrentCmd is null");
+            return;
+        }
+
+        /*UNISOC: Feature for claro & orange function @{*/
+        if (mContext.getResources().getBoolean(R.bool.config_refresh_no_toast)) {
+            CatLog.d(this, "[stkapp] Don't need launchRefreshMsg for STK Feature");
+            return;
+        }
+        /*UNISOC: @}*/
+
+        TextMessage msg = mStkContext[slotId].mCurrentCmd.geTextMessage();
+        if (msg == null || msg.text == null || msg.text.length() == 0) {
+            CatLog.d(this, "[stkapp] launchRefreshMsg is null");
+            return;
+        }
+        if (mToast != null) {
+            mToast.cancel();
+        }
+        mToast = Toast.makeText(mContext.getApplicationContext(), msg.text,
+                Toast.LENGTH_LONG);
+        mToast.setGravity(Gravity.BOTTOM, 0, 0);
+        mToast.show();
+    }
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for orange Feature patch SPCSS00430239 @{*/
+    private boolean isScreenLocked(){
+        boolean result = false;
+        KeyguardManager kmgt = (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
+        if (kmgt.inKeyguardRestrictedInputMode()) {
+            result = true;
+        }
+
+        return result;
+    }
+
+    private void beep() {
+        ToneGenerator tg = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 500);
+        tg.startTone(ToneGenerator.TONE_PROP_BEEP);
+        tg.stopTone();
+        tg.release();
+    }
+
+    private void wakeUp() {
+        long screenOnTimeOut = 5000;
+        beep();
+        PowerManager pmgt = (PowerManager) getSystemService(POWER_SERVICE);
+        WakeLock wakeLock = pmgt.newWakeLock(PowerManager.FULL_WAKE_LOCK |
+                PowerManager.ACQUIRE_CAUSES_WAKEUP, "StkWakeLock");
+        wakeLock.acquire(screenOnTimeOut);
+    }
+
+    private boolean isScreenSecure() {
+        boolean result = false;
+        KeyguardManager kmgt = (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
+        if (kmgt.isKeyguardSecure()) {
+            result = true;
+        }
+        CatLog.d(LOG_TAG, "isScreenSecure : " + result);
+        return result;
+    }
+
+    private void buildNotification(Intent embededIntent, String title, int slotId){
+        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, embededIntent, 0);
+
+        final Notification.Builder notificationBuilder = new Notification.Builder(StkAppService.this);
+        if (title != null) {
+            notificationBuilder.setContentTitle(title);
+            notificationBuilder.setTicker(title);
+        }
+        Bitmap bitmapIcon = BitmapFactory.decodeResource(StkAppService.this.getResources().getSystem(),
+                com.android.internal.R.drawable.stat_notify_sim_toolkit);
+        notificationBuilder.setLargeIcon(bitmapIcon);
+        notificationBuilder.setSmallIcon(com.android.internal.R.drawable.stat_notify_sim_toolkit);
+        notificationBuilder.setContentIntent(pendingIntent);
+        notificationBuilder.setAutoCancel(true);
+        notificationBuilder.setColor(mContext.getResources().getColor(
+                com.android.internal.R.color.system_notification_accent_color));
+        if (mNotificationManager != null) {
+            mNotificationManager.notify(getNotificationId(slotId), notificationBuilder.build());
+        }
+    }
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature bug for @{ */
+    private boolean isCallInStack() {
+        ActivityManager mActivityManager = (ActivityManager) mContext
+                .getSystemService(ACTIVITY_SERVICE);
+        String currentPackageName = null;
+        List<RunningTaskInfo> tasks = mActivityManager.getRunningTasks(1);
+        if (tasks == null || tasks.get(0).topActivity == null) {
+            return false;
+        }
+        currentPackageName = tasks.get(0).topActivity.getPackageName();
+        CatLog.d(LOG_TAG, "currentPackageName : " + currentPackageName);
+        if (null != currentPackageName) {
+            return currentPackageName.equals(CALL_PACKAGE_NAME);
+        }
+        return false;
+    }
+
+    boolean isMainMenuExsit(int slotId) {
+        CatLog.d(LOG_TAG, "isMainMenuExsit, sim id: " + slotId);
+        if (slotId == 0 && mStkContext[slotId + 1].mMainCmd == null) {
+            return false;
+        } else if (slotId == 1 && mStkContext[slotId - 1].mMainCmd == null) {
+            return false;
+        }
+        return true;
+    }
+
+    boolean isShowSetupMenuTitle() {
+        int count = 0;
+        int id = 0;
+
+        if (isAllCardsExsit()) {
+            return false;
+        }
+
+        for (int i = 0; i < mSimCount; i++) {
+            if (mStkContext[i].mCurrentMenu != null) {
+                ++count;
+                id = i;
+            }
+        }
+        CatLog.d(LOG_TAG, "isShowSetupMenuTitle count=" + count + " id=" + id);
+        if (count == 1) {
+            if (mContext.getResources().getBoolean(R.bool.config_show_setupMenu_title)) {
+                return true;
+            }
+        }
+
+        return false;
+
+    }
+
+    // Check if all SIMs are in the card slot.
+    private boolean isAllCardsExsit() {
+        TelephonyManager mTm = (TelephonyManager) mContext.getSystemService(
+                Context.TELEPHONY_SERVICE);
+        int i = 0;
+        int count = 0;
+
+        for (i = 0; i < mSimCount; i++) {
+            if (mTm.hasIccCard(i)) {
+                count++;
+            }
+        }
+
+        if (count > 1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void onCmdResponse(CatResponseMessage resMsg, int slotId){
+        if(mStkService[slotId] == null){
+            CatLog.d(LOG_TAG, "mStkService[" + slotId + "] is null, reget it from CatService");
+            mStkService[slotId] = CatService.getInstance(slotId);
+        }
+        if (mStkService[slotId] == null) {
+            // This should never happen (we should be responding only to a message
+            // that arrived from StkService). It has to exist by this time
+            CatLog.d(LOG_TAG, "Exception! mStkService is null when we need to send response.");
+        }else{
+            mStkService[slotId].onCmdResponse(resMsg);
+        }
+    }
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for Idle Mode(case 27.22.4.22.2/4) @{ */
+    private boolean isBusyOnCall() {
+        for (int i = 0; i < mSimCount; i++) {
+            int callState = getCallStateForSlot(i);
+            CatLog.d(this, "slotId : " + i + " isBusyOnCall callState : " + callState);
+            if (TelephonyManager.CALL_STATE_IDLE != callState) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /*UNISOC: @}*/
+
+    /* UNISOC: Feature for Cucc function @{ */
+    boolean isCuccOperator() {
+        if (mContext.getResources().getBoolean(R.bool.config_show_two_app)) {
+            CatLog.d(LOG_TAG, "isCuccOperator ,the operator is Cucc!");
+            return true;
+        }
+        CatLog.d(LOG_TAG, "NOT Cucc");
+        return false;
+    }
+
+    private boolean isCardReady(Context context, int id) {
+        TelephonyManager tm = TelephonyManager.from(context);
+        // Check if the card is inserted.
+        if (id < 0) {
+            return false;
+        }
+        CatLog.d(this, "tm.getSimState(id)= " + tm.getSimState(id));
+        if (tm.getSimState(id) == TelephonyManager.SIM_STATE_READY) {
+            if (mStkContext[id] != null && mStkContext[id].mMainCmd != null) {
+                CatLog.d(this, "SIM " + id + " is ready.");
+                return true;
+            }
+        } else {
+            CatLog.d(this, "SIM " + id + " is not inserted.");
+        }
+        return false;
+    }
+
+    private boolean isCardReady(Context context) {
+        int simCount = TelephonyManager.from(context).getSimCount();
+        TelephonyManager tm = TelephonyManager.from(context);
+        CatLog.d(this, "simCount: " + simCount);
+        for (int i = 0; i < simCount; i++) {
+            // Check if the card is inserted.
+            if (tm.hasIccCard(i)) {
+                CatLog.d(this, "SIM " + i + " is inserted");
+                if (tm.getSimState(i) == TelephonyManager.SIM_STATE_READY && mStkContext[i] != null
+                        && mStkContext[i].mMainCmd != null) {
+                    CatLog.d(this, "SIM " + i + " is ready.");
+                    return true;
+                }
+            } else {
+                CatLog.d(this, "SIM " + i + " is not inserted.");
+            }
+        }
+        return false;
+    }
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+    boolean getDisplayTextResponsed(int slotId) {
+        if (slotId >= 0 && slotId < mSimCount) {
+            return mStkContext[slotId].mDisplayTextResponsed;
+        }
+        return false;
+    }
+    /*UNISOC: @}*/
+
+    /*UNISOC: bug for black screen @{*/
+    private void delayToCheckUserUnlock(int slotId) {
+        CatLog.d(LOG_TAG, "delayToCheckUserUnlock, slotId: " + slotId);
+        Message msg1 = mServiceHandler.obtainMessage();
+        msg1.arg1 = OP_DELAY_TO_CHECK_USER_UNLOCK;
+        msg1.arg2 = slotId;
+        mServiceHandler.sendMessageDelayed(msg1, DELAY_TO_CHECK_USER_UNLOCK_TIME);
+    }
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for SET_UP_CALL @{ */
+    private void showIconToast(TextMessage msg) {
+        Toast t = new Toast(this);
+        ImageView v = new ImageView(this);
+        v.setImageBitmap(msg.icon);
+        t.setView(v);
+        t.setDuration(Toast.LENGTH_LONG);
+        t.show();
+    }
+
+    private void showTextToast(TextMessage msg, int slotId) {
+        msg.title = mStkContext[slotId].lastSelectedItem;
+
+        Toast toast = Toast.makeText(mContext.getApplicationContext(), msg.text,
+                Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.BOTTOM, 0, 0);
+        toast.show();
+    }
+
+    private void showIconAndTextToast(TextMessage msg) {
+        Toast t = new Toast(this);
+        ImageView v = new ImageView(this);
+        v.setImageBitmap(msg.icon);
+        t.setView(v);
+        t.setDuration(Toast.LENGTH_LONG);
+        t.show();
+    }
+
+    private void launchCallMsg(int slotId) {
+        TextMessage msg = mStkContext[slotId].mCurrentCmd.getCallSettings().callMsg;
+        if (msg.iconSelfExplanatory == true) {
+            // only display Icon.
+            if (msg.icon != null) {
+                showIconToast(msg);
+            } else {
+                // do nothing.
+                return;
+            }
+        } else {
+            // show text & icon.
+            if (msg.icon != null) {
+                if (msg.text == null || msg.text.length() == 0) {
+                    // show Icon only.
+                    showIconToast(msg);
+                }
+                else {
+                    showIconAndTextToast(msg);
+                }
+            } else {
+                if (msg.text == null || msg.text.length() == 0) {
+                    // do nothing
+                    return;
+                } else {
+                    showTextToast(msg, slotId);
+                }
+            }
+        }
+    }
+
+
+    private int getCallStateForSlot(int slotId) {
+        return TelephonyManager.from(mContext).getCallStateForSlot(slotId);
+    }
+
+    private void processSetupCallResponse(int slotId, boolean confirmed) {
+        CatLog.d(this, "processSetupCallResponse, sim id : " + slotId +
+                " confirmed :" + confirmed);
+        mStkContext[slotId].mCmdInProgress = false;
+        if (mStkContext[slotId].mSetupCallInProcess == false) {
+            return;
+        }
+        mStkContext[slotId].mSetupCallInProcess = false;
+        if (mStkContext[slotId].mCurrentCmd == null
+                || mStkContext[slotId].mCurrentCmd.getCmdType() == null) {
+            CatLog.d(this, "processNormalResponse mCurrentCmd is null or cmdType is null");
+            return;
+        }
+        CatLog.d(this, "processNormalResponse cmdName: "
+                + mStkContext[slotId].mCurrentCmd.getCmdType().name());
+        CatResponseMessage resMsg = new CatResponseMessage(mStkContext[slotId].mCurrentCmd);
+        resMsg.setResultCode(ResultCode.OK);
+        resMsg.setConfirmation(confirmed);
+        if (confirmed) {
+            launchCallMsg(slotId);
+        }
+        onCmdResponse(resMsg,slotId);
+    }
+
+    private void processNoCall(int slotId) {
+        if (TelephonyManager.CALL_STATE_IDLE == getCallStateForSlot(slotId)) {
+            CatLog.d(this, "No another call");
+            launchConfirmationDialog(mStkContext[slotId].mCurrentCmd.getCallSettings().confirmMsg, slotId);
+        } else {
+            CatLog.d(this, "currently busy on another call");
+            processSetupCallResponse(slotId, false);
+        }
+    }
+
+    private void processSetupCall(int slotId) {
+        CatLog.d(this, "processSetupCall, sim id: " + slotId);
+        mStkContext[slotId].mSetupCallInProcess = true;
+        /*If other sim is busy,we should not start setup call,so we set false to reponse */
+        for (int i = 0; i < mSimCount; i++) {
+            if ((i != slotId) && (TelephonyManager.CALL_STATE_IDLE != getCallStateForSlot(i))) {
+                CatLog.d(this, "The other sim is not idle, sim id: " + i);
+                processSetupCallResponse(slotId, false);
+                Toast.makeText(mContext.getApplicationContext(),
+                        R.string.default_call_setup_msg, Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+        int cmdQualifier = mStkContext[slotId].mCurrentCmd.getCommandQualifier();
+        CatLog.d(this, "Qualifier code is: " + cmdQualifier);
+        switch(cmdQualifier) {
+            case SETUP_CALL_NO_CALL_1:
+            case SETUP_CALL_NO_CALL_2:
+                processNoCall(slotId);
+                break;
+            case SETUP_CALL_HOLD_CALL_1:
+            case SETUP_CALL_HOLD_CALL_2:
+            case SETUP_CALL_END_CALL_1:
+            case SETUP_CALL_END_CALL_2:
+                launchConfirmationDialog(mStkContext[slotId].mCurrentCmd.getCallSettings().confirmMsg,
+                        slotId);
+                break;
+        }
+    }
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature bug for home key @{*/
+    void setmHomeKeyEvent(boolean homeKeyEvent) {
+        CatLog.d(LOG_TAG, "setmHomeKeyEvent : " + homeKeyEvent);
+        mHomePressedFlg = homeKeyEvent;
+    }
+    /*UNISOC: @}*/
+
+    /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+    private boolean isAirPlaneModeOn() {
+        return Settings.Global.getInt(mContext.getContentResolver(),
+                Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+    }
+    /*UNISOC: @}*/
+
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            CatLog.d(LOG_TAG, "onReceive, action: " + action );
+            if (action == null ) return;
+
+            boolean isAirPlaneModeOn = Settings.Global.getInt(context.getContentResolver(),
+                    Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+            CatLog.d(this, "isAirPlaneModeOn: " + isAirPlaneModeOn);
+            int simCount = TelephonyManager.from(context).getSimCount();
+            /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+            if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
+                if (isAirPlaneModeOn) {
+                    if (isCuccOperator()) {
+                        for (int i = 0; i < simCount; i++) {
+                            StkAppInstaller.unInstall(context, i);
+                        }
+                    } else {
+                        StkAppInstaller.unInstall(context);
+                    }
+                } else {
+                    if (isCuccOperator()) {
+                        for (int i = 0; i < simCount; i++) {
+                            if (isCardReady(context, i)) {
+                                StkAppInstaller.install(context, i);
+                            }
+                        }
+                    } else {
+                        if (isCardReady(context)) {
+                            StkAppInstaller.install(context);
+                        }
+                    }
+                }
+                /*UNISOC: @}*/
+            /*UNISOC: Feature for ModemAseert not display text Feature @{*/
+            } else if (ACTION_MODEM_CHANGE.equals(intent.getAction())) {
+                String state = intent.getStringExtra(MODEM_STAT);
+                CatLog.d(LOG_TAG, "modem start state : " + state);
+                if (MODEM_ASSERT.equals(state)) {
+                    for (int i = 0; i < simCount; i++) {
+                        System.setProperty("gsm.stk.modem.recovery" + i, "1");
+                    }
+                }
+            /*UNISOC: @}*/
+            /*UNISOC: Feature for USER_SWITCHED, all secondary users @{ */
+            } else if (action.equals(Intent.ACTION_USER_SWITCHED)) {
+                mCurrentUserId = intent.getIntExtra(Intent.EXTRA_USER_HANDLE, -1);
+                CatLog.d(LOG_TAG, "mCurrentUserId: " + mCurrentUserId);
+                if (mCurrentUserId != UserHandle.USER_OWNER) {
+                    for (int i = 0; i < simCount; i++) {
+                        if (mStkContext[i].mCurrentCmd == null) {
+                            CatLog.d(LOG_TAG, "secondary users,mCurrentCmd is null" );
+                            break;
+                        }
+                        if (mStkContext[i].mCurrentCmd.getCmdType().value() ==
+                                AppInterface.CommandType.DISPLAY_TEXT.value() &&
+                                !mStkContext[i].mDisplayTextResponsed) {
+                            CatLog.d(LOG_TAG, "secondary users, need send TR" );
+                            sendResponse(RES_ID_CONFIRM, i, true);
+                        }
+                    }
+                }
+            /*UNISOC: @}*/
+            /*UNISOC: Feature bug for home key @{*/
+            } else if (TextUtils.equals(action, Intent.ACTION_CLOSE_SYSTEM_DIALOGS)){
+                String reason = intent.getStringExtra(SYSTEM_REASON);
+                CatLog.d(LOG_TAG, "HomeKeyEvent reason:" + reason);
+                if (TextUtils.equals(reason, SYSTEM_HOME_KEY)) {
+                    mHomePressedFlg = true;
+                }
+            /*UNISOC: @}*/
+            }
+        }
+    };
+    /*UNISOC: @}*/
 }

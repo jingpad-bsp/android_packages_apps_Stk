@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <java-symbol type="bool" name="config_support_authentification" />
+    <java-symbol type="bool" name="config_show_two_app" />
+    <java-symbol type="bool" name="config_refresh_no_toast" />
+    <java-symbol type="bool" name="config_show_setupMenu_title" />
+    <java-symbol type="bool" name="config_show_specific_name" />
+</resources>

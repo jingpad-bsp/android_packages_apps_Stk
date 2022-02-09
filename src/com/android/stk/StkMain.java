@@ -71,11 +71,24 @@ import android.widget.Toast;
         int simCount = TelephonyManager.from(mContext).getSimCount();
         int simInsertedCount = 0;
         int insertedSlotId = -1;
+        /*UNISOC: Feature bug for Stk Feature @{*/
+        StkAppService appService = StkAppService.getInstance();
+        /*UNISOC: @}*/
 
         CatLog.d(LOG_TAG, "simCount: " + simCount);
         for (int i = 0; i < simCount; i++) {
+            /*UNISOC: Feature bug for Stk Feature @{*/
+            if (null == appService) {
+                CatLog.d(LOG_TAG, "appService is null and fetch again.");
+                appService = StkAppService.getInstance();
+            }
+            /*UNISOC: @}*/
             //Check if the card is inserted.
-            if (mTm.hasIccCard(i)) {
+            /*UNISOC: Feature bug for Stk Feature @{*/
+            if (mTm.getSimState(i) == TelephonyManager.SIM_STATE_READY
+                    && appService != null && appService.getStkContext(i) != null
+                    && appService.getStkContext(i).mMainCmd != null) {
+                /*UNISOC: @}*/
                 CatLog.d(LOG_TAG, "SIM " + i + " is inserted.");
                 mSingleSimId = i;
                 simInsertedCount++;

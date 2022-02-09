@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">சிம் டூல்கிட்</string>
+<string name="menu_end_session">"அமர்வை நிறைவு செய்யவும்"</string>
+<string name="help">உதவி</string>
+<string name="menu_back">பின்னே</string>
+<string name="service_name">"சேவையின் பெயர்"</string>
+<string name="stk_no_service">"சேவை எதுவும் இல்லை"</string>
+<string name="button_ok">ஓகே</string>
+<string name="button_cancel">நிராகரி</string>
+<string name="button_yes">ஆம்</string>
+<string name="button_no">"இல்லை"</string>
+<string name="alphabet">"எழுத்துக்கள்"</string>
+<string name="digits">"இலக்கங்கள் (0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"அழைப்பு செய்யப்படுகிறது..."</string>
+<string name="default_setup_call_msg">"அழைப்பு செட் அப் செய்யப்படுகிறது"</string>
+<string name="stk_app_state">"செயலியின் நிலை"</string>
+<string name="enable_app">"செயல்படுத்தப்பட்டது"</string>
+<string name="disable_app">"செயல்நீக்கப்பட்டது"</string>
+<string name="stk_dialog_title">சிம் டூல்கிட்</string>
+<string name="default_tone_dialog_msg">"டோன் ப்ளே செய்யப்படுகிறது"</string>
+<string name="default_open_channel_msg">"சேனலை திறக்கலாமா?"</string>
+<string name="default_send_data_msg">"தரவு அனுப்பபடுகிறது"</string>
+<string name="default_receive_data_msg">"தரவு பெறப்படுகிறது"</string>
+<string name="default_close_channel_msg">"சேனல் மூடப்பட்டுவிட்டது"</string>
+<string name="stk_dialog_accept">ஆம்</string>
+<string name="stk_dialog_reject">"இல்லை"</string>
+<string name="no_sim_card_inserted">"SIM டூல்கிட்டை தொடக்க SIM -ஐ நுழைக்கவும்"</string>
+<string name="stk_channel_name">"மொபைல் சேவை மெச்ஸேஜுகள்"</string>
+</resources>

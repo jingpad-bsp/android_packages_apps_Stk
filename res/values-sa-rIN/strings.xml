@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"SIM उपकरणानि"</string>
+<string name="menu_end_session">"सत्रान्तः"</string>
+<string name="help">"साहाय्यम्"</string>
+<string name="menu_back">"पृष्ठे"</string>
+<string name="service_name">"सेवायाः नाम"</string>
+<string name="stk_no_service">"सेवा अनुपलब्धा"</string>
+<string name="button_ok">"बाढम्।"</string>
+<string name="button_cancel">"निरस्यताम्"</string>
+<string name="button_yes">"आम्"</string>
+<string name="button_no">"न"</string>
+<string name="alphabet">"वर्णानि"</string>
+<string name="digits">"अङ्काः (0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"आह्वाहनं प्रक्रियायाम् अस्ति..."</string>
+<string name="default_setup_call_msg">"आह्वाहनं स्थापितं भवति"</string>
+<string name="stk_app_state">"अनुप्रयोगस्य स्थितिः"</string>
+<string name="enable_app">"सक्रियं कृतम्"</string>
+<string name="disable_app">"निष्क्रियम्"</string>
+<string name="stk_dialog_title">"SIM उपकरणानि"</string>
+<string name="default_open_channel_msg">"वाहिनीम् उद्घायति?"</string>
+<string name="default_send_data_msg">"दत्तांशं प्रेषयति"</string>
+<string name="default_receive_data_msg">"दत्तांशं प्राप्नोति"</string>
+<string name="default_close_channel_msg">"वाहिनी पिहिता"</string>
+<string name="stk_dialog_accept">"आम्"</string>
+<string name="stk_dialog_reject">"न"</string>
+<string name="no_sim_card_inserted">"SIM उपकरणसमुच्चयं स्थापयतिुं SIM निवेशयतु।"</string>
+<string name="default_tone_dialog_msg">"वादनस्य रवः"</string>
+<string name="stk_channel_name">"दूरभाषसेवायाः सन्देशाः"</string>
+</resources>

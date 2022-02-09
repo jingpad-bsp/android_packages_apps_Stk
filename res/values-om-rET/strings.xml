@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"SIM Toolkit"</string>
+<string name="menu_end_session">"Kutaa dhumaa"</string>
+<string name="help">"Gargaarsa"</string>
+<string name="menu_back">"Duuba/booda"</string>
+<string name="service_name">"Maqaa tajaajilaa"</string>
+<string name="stk_no_service">"Tajaajilli hin jiru"</string>
+<string name="button_ok">"TOLE"</string>
+<string name="button_cancel">"Balleessi"</string>
+<string name="button_yes">"Eeyyee"</string>
+<string name="button_no">"Lakki"</string>
+<string name="alphabet">"Qubeewwan"</string>
+<string name="digits">"Dijiitiiwwan (0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"Bibilaa jira\u2026"</string>
+<string name="default_setup_call_msg">"Waamichi sirreeffameera"</string>
+<string name="stk_app_state">"Haala appilikeeshiinii"</string>
+<string name="enable_app">"Banameera"</string>
+<string name="disable_app">"Dalagaa ala tahae"</string>
+<string name="stk_dialog_title">"SIM Toolkit"</string>
+<string name="default_tone_dialog_msg">"Tooni xabisaa"</string>
+<string name="default_open_channel_msg">"Chaanaalii banuu?"</string>
+<string name="default_send_data_msg">"Odeeffannoo ergaa jira"</string>
+<string name="default_receive_data_msg">"Odeeffannoo fudhataa jira"</string>
+<string name="default_close_channel_msg">"Chaanaaliin cufameera"</string>
+<string name="stk_dialog_accept">"Eeyyee"</string>
+<string name="stk_dialog_reject">"Lakki"</string>
+<string name="no_sim_card_inserted">"maaloo SIM itti galchi haala SIM hundeessuuf."</string>
+<string name="stk_channel_name">"Ergaawwan tajaajila mobaayilii"</string>
+</resources>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">SIM اوزار باکس</string>
+<string name="menu_end_session">نشست کا اختتام</string>
+<string name="help">"مدد"</string>
+<string name="menu_back">"واپس جائیں"</string>
+<string name="service_name">خدمت کا نام</string>
+<string name="stk_no_service">کوئ خدمت میسرنہیں ہے</string>
+<string name="button_ok">"ٹھیک ہے"</string>
+<string name="button_cancel">"منسوخ کریں"</string>
+<string name="button_yes">"ہاں"</string>
+<string name="button_no">"نہیں"</string>
+<string name="alphabet">"حروف"</string>
+<string name="digits">(0-9, *, #, +) ںمبرز</string>
+<string name="default_call_setup_msg">کال جاری ہے...</string>
+<string name="default_setup_call_msg">"کال قیام ہو رہی ہے"</string>
+<string name="stk_app_state">ایپلی کیشن کی حالت</string>
+<string name="enable_app">فعال کردیا گیا</string>
+<string name="disable_app">"غیر فعال"</string>
+<string name="stk_dialog_title">SIM اوزار باکس</string>
+<string name="default_tone_dialog_msg">"موجودہ ٹون"</string>
+<string name="default_open_channel_msg">" چینل کھولیں ؟"</string>
+<string name="default_send_data_msg">"ڈیٹا بھیج رہا ہے"</string>
+<string name="default_receive_data_msg">" ڈیٹا وصول ہو رہا ہے"</string>
+<string name="default_close_channel_msg">"چینل بند"</string>
+<string name="stk_dialog_accept">"ہاں"</string>
+<string name="stk_dialog_reject">"نہیں"</string>
+<string name="no_sim_card_inserted">"SIM ٹول کٹ کو شروع کرنے کے لئے SIMداخل کریں."</string>
+<string name="stk_channel_name">"موبائل سروس کے پیغامات"</string>
+</resources>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"Xidhmada SIM-ka"</string>
+<string name="menu_end_session">"Dhamee kulanka"</string>
+<string name="help">"caawimaad"</string>
+<string name="menu_back">"Noqo"</string>
+<string name="service_name">"Magaca adeega"</string>
+<string name="stk_no_service">"Wax adeeg ah lamahelin"</string>
+<string name="button_ok">"OK"</string>
+<string name="button_cancel">"Jooji"</string>
+<string name="button_yes">"Haa"</string>
+<string name="button_no">"Maya"</string>
+<string name="alphabet">"Alifbeetooyin"</string>
+<string name="digits">"Godadka (0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"Wicitaanka wuu socdaa\u2026"</string>
+<string name="default_setup_call_msg">"Wicitaanka waa ladiyaarshay"</string>
+<string name="stk_app_state">"Xaalada applicationka"</string>
+<string name="enable_app">"Waa lafuray"</string>
+<string name="disable_app">"La damiyay"</string>
+<string name="stk_dialog_title">"Xidhmada SIM-ka"</string>
+<string name="default_tone_dialog_msg">"Codka ciyaarta"</string>
+<string name="default_open_channel_msg">"Fur kanaalka?"</string>
+<string name="default_send_data_msg">"Diraaya macluumaad"</string>
+<string name="default_receive_data_msg">"Helaaya macluumaad"</string>
+<string name="default_close_channel_msg">"Kanaalka waa laxiray"</string>
+<string name="stk_dialog_accept">"Haa"</string>
+<string name="stk_dialog_reject">"Maya"</string>
+<string name="no_sim_card_inserted">"Fadlan gali SIM-ka si loo kiciyo xidhmada SIM-ka"</string>
+<string name="stk_channel_name">"Fariimaha adeegga moobilka"</string>
+</resources>

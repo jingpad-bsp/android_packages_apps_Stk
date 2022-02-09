@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"SIM তুলকিত"</string>
+<string name="menu_end_session">"সেসন লোইয়ু"</string>
+<string name="help">"মতেং"</string>
+<string name="menu_back">"মনিং হল্লু"</string>
+<string name="service_name">"সার্ভিস মমিং"</string>
+<string name="stk_no_service">"সার্ভিস অমত্তা ফংদে"</string>
+<string name="button_ok">"ওকে"</string>
+<string name="button_cancel">"ককথৎলু"</string>
+<string name="button_yes">"হোই"</string>
+<string name="button_no">"নত্তে"</string>
+<string name="alphabet">"ময়েকশীং"</string>
+<string name="digits">"দিজিতশীং (0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"কোল চত্থরি..."</string>
+<string name="default_setup_call_msg">"কোল সেট অপ তৌরি"</string>
+<string name="stk_app_state">"এপ্লিকেশনগী ফিভম"</string>
+<string name="enable_app">"য়াহল্লে"</string>
+<string name="disable_app">"য়াহন্দে"</string>
+<string name="stk_dialog_title">"SIM তুলকিত"</string>
+<string name="default_tone_dialog_msg">"প্লে তৌরিবা তোন"</string>
+<string name="default_open_channel_msg">"হাংদোকপা চেনেল?"</string>
+<string name="default_send_data_msg">"দাতা থারি"</string>
+<string name="default_receive_data_msg">"দাতা লৌশিল্লি"</string>
+<string name="default_close_channel_msg">"চেনেল খুমজিনখ্রে"</string>
+<string name="stk_dialog_accept">"হোই"</string>
+<string name="stk_dialog_reject">"নত্তে"</string>
+<string name="no_sim_card_inserted">"SIM তূলকিত লোনচ তৌনবা SIM হাপচিনবিয়ু."</string>
+<string name="stk_channel_name">"মোবাইল সার্ভিস মেসেজশীং"</string>
+</resources>

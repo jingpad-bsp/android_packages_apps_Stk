@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">SIM ਟੂਲਕਿਟ</string>
+<string name="menu_end_session">ਸੈਸ਼ਨ ਸਮਾਪਤ ਕਰੋ</string>
+<string name="help">ਸਹਾਇਤਾ</string>
+<string name="menu_back">ਪਿੱਛੇ</string>
+<string name="service_name">ਸੇਵਾ ਦਾ ਨਾਂ</string>
+<string name="stk_no_service">ਕੋਈ ਸੇਵਾ ਉਪਲਬਧ ਨਹੀਂ</string>
+<string name="button_ok">"ਠੀਕ ਹੈ"</string>
+<string name="button_cancel">ਰੱਦ ਕਰੋ</string>
+<string name="button_yes">ਹਾਂ</string>
+<string name="button_no">ਨਹੀਂ</string>
+<string name="alphabet">ਵਰਣਮਾਲਾ</string>
+<string name="digits">数字（0-9、*、#、+）</string>
+<string name="default_call_setup_msg">ਕਾਲ ਪ੍ਰਗਤੀ ਵਿੱਚ\u2026</string>
+<string name="default_setup_call_msg">"ਕਾਲ ਸੈੱਟਅਪ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ"</string>
+<string name="stk_app_state">ਅਨੁਪ੍ਰਯੋਗ ਸਥਿਤੀ</string>
+<string name="enable_app">"ਸਮਰੱਥਿਤ"</string>
+<string name="disable_app">"ਅਸਮਰੱਥਿਤ"</string>
+<string name="stk_dialog_title">SIM ਟੂਲਕਿਟ</string>
+<string name="default_tone_dialog_msg">"ਟੋਨ ਚਲਾ ਰਿਹਾ ਹੈ"</string>
+<string name="default_open_channel_msg">"ਕੀ ਤੁਸੀਂ ਚੈਨਲ ਖੋਲ੍ਹਣਾ ਚਾਹੁੰਦੇ ਹੋ?"</string>
+<string name="default_send_data_msg">"ਡਾਟਾ ਭੇਜ ਰਿਹਾ ਹੈ"</string>
+<string name="default_receive_data_msg">"ਡਾਟਾ ਪ੍ਰਾਪਤ ਕਰ ਰਿਹਾ ਹੈ"</string>
+<string name="default_close_channel_msg">"ਚੈਨਲ ਬੰਦ ਹੈ"</string>
+<string name="stk_dialog_accept">ਹਾਂ</string>
+<string name="stk_dialog_reject">ਨਹੀਂ</string>
+<string name="no_sim_card_inserted">"SIM ਟੂਲਕਿੱਟ ਲਾਂਚ ਕਰਨ ਲਈ ਕਿਰਪਾ ਕਰਕੇ SIM ਪਾਓ।"</string>
+<string name="stk_channel_name">"ਮੋਬਾਈਲ ਸੇਵਾ ਸੰਦੇਸ਼"</string>
+</resources>

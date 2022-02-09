@@ -22,6 +22,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -29,11 +31,14 @@ import android.telephony.SubscriptionManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.telephony.TelephonyManager;
 
 import com.android.internal.telephony.cat.CatLog;
 import com.android.internal.telephony.cat.TextMessage;
+import com.android.internal.telephony.PhoneConstants;
 
 /**
  * AlertDialog used for DISPLAY TEXT commands.
@@ -41,8 +46,8 @@ import com.android.internal.telephony.cat.TextMessage;
  */
 public class StkDialogActivity extends Activity {
     // members
-    private static final String className = new Object(){}.getClass().getEnclosingClass().getName();
-    private static final String LOG_TAG = className.substring(className.lastIndexOf('.') + 1);
+    //private static final String className = new Object(){}.getClass().getEnclosingClass().getName();
+    private static final String LOG_TAG = "StkDialogActivity";
     TextMessage mTextMsg = null;
     private int mSlotId = -1;
     private StkAppService appService = StkAppService.getInstance();
@@ -65,10 +70,43 @@ public class StkDialogActivity extends Activity {
 
     private AlertDialog mAlertDialog;
 
+    /*UNISOC: Feature for orange Feature @{*/
+    private Context mContext;
+    private boolean mHomePressedFlg;
+    /*UNISOC: @}*/
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mContext = getBaseContext();
+        /*UNISOC: Feature for orange Feature patch SPCSS00430239 @{*/
+        if (mContext.getResources().getBoolean(R.bool.config_support_authentification)) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        }
+        /*UNISOC: @}*/
+
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        /*UNISOC: @}*/
+        /*UNISOC: Feature for orange Feature patch SPCSS00430235 @{*/
+        intentFilter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+        intentFilter.addAction(StkAppService.CLOSE_DIALOG_ACTIVITY);
+        /*UNISOC: @}*/
+        mContext.registerReceiver(mReceiver, intentFilter);
+
+        /*UNISOC: Feature bug @{*/
+        Intent intent = getIntent();
+        if (intent != null) {
+            mSlotId = intent.getIntExtra(StkAppService.SLOT_ID, -1);
+        } else {
+            finish();
+        }
+        /*UNISOC: @}*/
         CatLog.d(LOG_TAG, "onCreate, sim id: " + mSlotId);
 
         // appService can be null if this activity is automatically recreated by the system
@@ -124,21 +162,35 @@ public class StkDialogActivity extends Activity {
             // command with an immediate response object should disappear when the terminal receives
             // a subsequent proactive command containing display data.
             appService.getStkContext(mSlotId).setImmediateDialogInstance(this);
-        }
 
-        alertDialogBuilder.setTitle(mTextMsg.title);
+        /*UNISOC: Bug for 1395367 @{*/
+        } else {
+            appService.getStkContext(mSlotId).setPendingDialogInstance(this);
+        }
+        /*UNISOC: @}*/
+
+        /*UNISOC: Feature for orange Feature SPCSS00430231 @{*/
+        if (!(mContext.getResources().getBoolean(R.bool.config_support_authentification))) {
+            alertDialogBuilder.setTitle(mTextMsg.title);
+        }
+        /*UNISOC: @}*/
 
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.stk_msg_dialog, null);
         alertDialogBuilder.setView(dialogView);
         TextView tv = (TextView) dialogView.findViewById(R.id.message);
         ImageView iv = (ImageView) dialogView.findViewById(R.id.icon);
-
-        if (mTextMsg.icon != null) {
-            iv.setImageBitmap(mTextMsg.icon);
+        /*UNISOC: Feature for orange Feature SPCSS00430231 @{*/
+        if(!(mContext.getResources().getBoolean(R.bool.config_support_authentification))) {
+            if (mTextMsg.icon != null) {
+                iv.setImageBitmap(mTextMsg.icon);
+            } else {
+                iv.setVisibility(View.GONE);
+            }
         } else {
             iv.setVisibility(View.GONE);
         }
+        /*UNISOC: @}*/
 
         // Per spec, only set text if the icon is not provided or not self-explanatory
         if ((mTextMsg.icon == null || !mTextMsg.iconSelfExplanatory)
@@ -191,7 +243,24 @@ public class StkDialogActivity extends Activity {
     public void onPause() {
         super.onPause();
         CatLog.d(LOG_TAG, "onPause, sim id: " + mSlotId);
-        appService.setDisplayTextDlgVisibility(false, mSlotId);
+        /* UNISOC: Feature bug @{ */
+        if (appService == null) {
+            finish();
+            return;
+        }
+
+        if (appService.isCuccOperator()) {
+            cancelTimeOut();
+            // Add paramater to differ the user operate.
+            if (!mIsResponseSent) {
+                sendResponse(StkAppService.RES_ID_END_SESSION, false, mHomePressedFlg);
+                mHomePressedFlg = false;
+            }
+            finish();
+        } else {
+            appService.setDisplayTextDlgVisibility(false, mSlotId);
+        }
+        /*UNISOC: @}*/
 
         /*
          * do not cancel the timer here cancelTimeOut(). If any higher/lower
@@ -221,6 +290,12 @@ public class StkDialogActivity extends Activity {
             return;
         }
 
+        /*UNISOC: Feature bug @{*/
+        if (!mTextMsg.responseNeeded) {
+            return;
+        }
+        /*UNISOC: @}*/
+
         // This is registered as the pending dialog as this was sent to the background.
         setPendingState(true);
     }
@@ -248,6 +323,11 @@ public class StkDialogActivity extends Activity {
             }
         }
         cancelTimeOut();
+        /*UNISOC: Feature for orange Feature @{*/
+        if (mReceiver != null) {
+            unregisterReceiver(mReceiver);
+        }
+        /*UNISOC: @}*/
     }
 
     @Override
@@ -403,4 +483,71 @@ public class StkDialogActivity extends Activity {
                     sendResponse(StkAppService.RES_ID_TIMEOUT);
                 }
             };
+
+    /* UNISOC: Feature for Cucc function @{ */
+    private void sendResponse(int resId, boolean confirmed, boolean homepressed) {
+        if (mSlotId == -1) {
+            CatLog.d(LOG_TAG, "sim id is invalid");
+            return;
+        }
+
+        if (StkAppService.getInstance() == null) {
+            CatLog.d(LOG_TAG, "Ignore response: id is " + resId);
+            return;
+        }
+
+        CatLog.d(LOG_TAG, "sendResponse resID[" + resId + "] confirmed[" + confirmed + "]"+" homepressed ["+homepressed+"];");
+        if (mTextMsg.responseNeeded) {
+            Bundle args = new Bundle();
+            args.putInt(StkAppService.OPCODE, StkAppService.OP_RESPONSE);
+            args.putInt(StkAppService.RES_ID, resId);
+            args.putBoolean(StkAppService.CONFIRMATION, confirmed);
+            args.putInt(StkAppService.SLOT_ID, mSlotId);
+            args.putBoolean(StkAppService.HOMEPRESSEDFLAG, homepressed);
+            startService(new Intent(this, StkAppService.class).putExtras(args));
+            mIsResponseSent = true;
+        }
+
+        if (!isFinishing()) {
+            finish();
+        }
+    }
+    /*UNISOC: @}*/
+
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            CatLog.d(LOG_TAG, "action: " + action);
+            /*UNISOC: Feature for orange Feature patch SPCSS00430242 @{ */
+            if (TextUtils.equals(action, Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) {
+                String reason = intent.getStringExtra(StkAppService.SYSTEM_REASON);
+                CatLog.d(LOG_TAG, "reason: " + reason);
+                if (TextUtils.equals(reason, StkAppService.SYSTEM_HOME_KEY)) {
+                    mHomePressedFlg = true;
+                    CatLog.d(LOG_TAG, "handleHomeKeyClick, ready to response");
+                    sendResponse(StkAppService.RES_ID_CONFIRM, false);
+                    finish();
+                }
+            } else if (action.equals(StkAppService.CLOSE_DIALOG_ACTIVITY)) {
+                int slotId = intent.getIntExtra(StkAppService.SLOT_ID, -1);
+                CatLog.d(LOG_TAG, "CLOSE_DIALOG_ACTIVITY, mIsResponseSent: " + mIsResponseSent +
+                        " slotId:" + slotId);
+                if (!mIsResponseSent && slotId != -1 && mSlotId == slotId) {
+                    CatLog.d(LOG_TAG, "CLOSE_DIALOG_ACTIVITY finish");
+                    if (mTextMsg.responseNeeded) {
+                        sendResponse(StkAppService.RES_ID_CONFIRM, true);
+                    }
+                    finish();
+                }
+            /*UNISOC: @}*/
+            /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+            } else if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
+                CatLog.d(LOG_TAG, "ACTION_AIRPLANE_MODE_CHANGED rcvd finish");
+                sendResponse(StkAppService.RES_ID_CONFIRM, false);
+                finishAndRemoveTask();
+            }
+            /*UNISOC: @}*/
+        }
+    };
 }

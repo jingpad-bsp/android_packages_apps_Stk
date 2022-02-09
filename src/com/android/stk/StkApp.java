@@ -17,13 +17,17 @@
 package com.android.stk;
 
 import android.app.Application;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.telephony.TelephonyManager;
 
+import com.android.internal.telephony.cat.CatLog;
 import com.android.internal.telephony.cat.Duration;
 
 /**
  * Top-level Application class for STK app.
  */
-abstract class StkApp extends Application {
+public class StkApp extends Application {
     // Application constants
     public static final boolean DBG = true;
 
@@ -43,6 +47,10 @@ abstract class StkApp extends Application {
     static final int TONE_DEFAULT_TIMEOUT = (2 * 1000);
 
     public static final String TAG = "STK App";
+
+    /*UNISOC: Feature for Telcel Feature @{ */
+    private Context mContext;
+    /*UNISOC: @}*/
 
     /**
      * This function calculate the time in MS from a duration instance.
@@ -67,4 +75,37 @@ abstract class StkApp extends Application {
         }
         return timeout;
     }
+
+    /*UNISOC: Feature for Telcel Feature @{ */
+    public void onCreate() {
+        super.onCreate();
+        CatLog.d(TAG, " onCreate");
+        mContext = getApplicationContext();
+        StkAppService appService = StkAppService.getInstance();
+        TelephonyManager tm = TelephonyManager.from(mContext);
+        if (appService == null) {
+            int phoneCount = tm.getPhoneCount();
+            for (int i = 0; i < phoneCount; i++) {
+                StkAppInstaller.unInstall(mContext, i);
+            }
+            if (mContext.getResources().getBoolean(R.bool.config_show_specific_name)
+                    && !hasIccCard()) {
+                StkAppInstaller.unInstall(mContext);
+                StkAppInstaller.install(mContext);
+            } else {
+                StkAppInstaller.unInstall(mContext);
+            }
+        }
+    }
+
+    private boolean hasIccCard() {
+        TelephonyManager tm = TelephonyManager.from(mContext);
+        for (int i = 0; i < tm.getPhoneCount(); i++) {
+            if (tm.hasIccCard(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /*UNISOC: @}*/
 }

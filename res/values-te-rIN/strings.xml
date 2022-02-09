@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">SIM టూల్ కిట్</string>
+<string name="menu_end_session">"ముగింపు సెషన్"</string>
+<string name="help">"సహాయం"</string>
+<string name="menu_back">వెనుకకు</string>
+<string name="service_name">"సర్వీస్ పేరు"</string>
+<string name="stk_no_service">"సర్వీస్ అందుబాటులో లేదు"</string>
+<string name="button_ok">సరి</string>
+<string name="button_cancel">రద్దు</string>
+<string name="button_yes">అవును</string>
+<string name="button_no">కాదు</string>
+<string name="alphabet">"ఆల్ఫా బెట్స్"</string>
+<string name="digits">"డిజిట్స్ (0-9, *, #,+)"</string>
+<string name="default_call_setup_msg">"కాల్ ఇన్ ప్రోగ్రెస్ లో ఉంది"</string>
+<string name="default_setup_call_msg">"కాల్ ఏర్పాటు అవుతుంది"</string>
+<string name="stk_app_state">"అప్లికేషన్ స్థితి"</string>
+<string name="enable_app">"ఎనేబుల్ చేయబడింది"</string>
+<string name="disable_app">"డిజేబుల్ చేయబడింది"</string>
+<string name="stk_dialog_title">SIM టూల్ కిట్</string>
+<string name="default_tone_dialog_msg">"ప్లేయింగ్ టోన్"</string>
+<string name="default_open_channel_msg">"చానెల్ ను ఓపెన్ చేయుము"</string>
+<string name="default_send_data_msg">"డాటా ను పంపుతున్నాము"</string>
+<string name="default_receive_data_msg">"డాటా ను స్వీకరించుచున్నాము"</string>
+<string name="default_close_channel_msg">"చానల్ మూయబడెను"</string>
+<string name="stk_dialog_accept">అవును</string>
+<string name="stk_dialog_reject">కాదు</string>
+<string name="no_sim_card_inserted">"సిమ్ టూల్ కిట్ ను మొదలు పెట్టేందుకు సిమ్ ను లాంచ్ చేయుము"</string>
+<string name="stk_channel_name">"మొబైల్ సర్వీస్ మెసేజ్ లు"</string>
+</resources>

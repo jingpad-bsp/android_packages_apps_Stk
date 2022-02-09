@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"ເຄື່ອງມືນຳໃຊ້ SIM "</string>
+<string name="menu_end_session">"ພາກສຸດທ້າຍ"</string>
+<string name="help">"ຊ່ວຍເຫລືອ"</string>
+<string name="menu_back">"ກັບຄືນ"</string>
+<string name="service_name">"ຊື່ບໍລິການ"</string>
+<string name="stk_no_service">"ບໍ່ມີບໍລິການ"</string>
+<string name="button_ok">"ການເຂົ້າໃຈ"</string>
+<string name="button_cancel">"ຍົກເລີກ"</string>
+<string name="button_yes">"ຕົກລົງ"</string>
+<string name="button_no">"ບໍ່"</string>
+<string name="alphabet">"ຕົວອັກສອນ"</string>
+<string name="digits">"ຕົວເລກ (0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"ກຳລັງໂທອອກ\u2026"</string>
+<string name="default_setup_call_msg">"ກຳລັງຕັ້ງການໂທ"</string>
+<string name="stk_app_state">"ຂໍ້ກໍານົດແອັບພຣີເຄຊັ່ນ"</string>
+<string name="enable_app">"ເປິດນຳໃຊ້"</string>
+<string name="disable_app">"ປິດການນຳໃຊ້ແລ້ວ"</string>
+<string name="stk_dialog_title">"ເຄື່ອງມືນຳໃຊ້ SIM "</string>
+<string name="default_tone_dialog_msg">"ການຫຼີ້ນສຽງ"</string>
+<string name="default_open_channel_msg">"ເປິດຊ່ອງບໍ?"</string>
+<string name="default_send_data_msg">"ການສົ່ງຂໍ້ມູນ"</string>
+<string name="default_receive_data_msg">"ການຮັບຂໍ້ມູນ"</string>
+<string name="default_close_channel_msg">"ຊ່ອງຖືກປິດ"</string>
+<string name="stk_dialog_accept">"ຕົກລົງ"</string>
+<string name="stk_dialog_reject">"ບໍ່"</string>
+<string name="no_sim_card_inserted">"ກາລຸນາເອົາ SIM ເຂົ້າໄປຕາມເຄື່ອງມືນຳໃຊ້ SIM."</string>
+<string name="stk_channel_name">"ຂໍ້ຄວາມບໍລິການໃນໂທລະສັບມືຖື"</string>
+</resources>

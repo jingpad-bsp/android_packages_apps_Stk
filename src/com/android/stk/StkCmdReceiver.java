@@ -31,10 +31,15 @@ import com.android.internal.telephony.cat.AppInterface;
  *
  */
 public class StkCmdReceiver extends BroadcastReceiver {
-
+    /*UNISOC: Feature bug for Stk Feature @{*/
+    private static final String LOG_TAG = "StkCmdReceiver";
+    /*UNISOC: @}*/
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        /*UNISOC: Feature bug for Stk Feature @{*/
+        CatLog.d(LOG_TAG, "action = " + action);
+        /*UNISOC: @}*/
         if (action == null) {
             return;
         }

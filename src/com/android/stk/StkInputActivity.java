@@ -22,6 +22,10 @@ import android.app.AlarmManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import android.provider.Settings;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.text.Editable;
@@ -41,9 +45,11 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
+import android.telephony.TelephonyManager;
 
 import com.android.internal.telephony.cat.CatLog;
 import com.android.internal.telephony.cat.Input;
+import com.android.internal.telephony.PhoneConstants;
 
 /**
  * Display a request for a text input a long with a text edit form.
@@ -53,7 +59,11 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
 
     // Members
     private int mState;
-    private EditText mTextIn = null;
+    /*UNISOC: Feature for orange Feature SPCSS00430236@{*/
+    //private EditText mTextIn = null;
+    private Context mContext;
+    private RemoveInputMethodEditText mTextIn = null;
+    /*UNISOC: @}*/
     private TextView mPromptView = null;
     private View mMoreOptions = null;
     private PopupMenu mPopupMenu = null;
@@ -150,6 +160,25 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
 
         CatLog.d(LOG_TAG, "onCreate - mIsResponseSent[" + mIsResponseSent + "]");
 
+        mContext = getBaseContext();
+        /*UNISOC: Feature for orange Feature patch SPCSS00430239 @{*/
+        if (mContext.getResources().getBoolean(R.bool.config_support_authentification)) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        }
+        /* UNISOC: @}*/
+
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        IntentFilter intent = new IntentFilter();
+        intent.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        intent.addAction(TelephonyManager.ACTION_SIM_CARD_STATE_CHANGED);
+        intent.addAction(Intent.ACTION_SHUTDOWN);
+        /* UNISOC: @}*/
+        intent.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+        mContext.registerReceiver(mReceiver, intent);
+
         // appService can be null if this activity is automatically recreated by the system
         // with the saved instance state right after the phone process is killed.
         if (appService == null) {
@@ -158,6 +187,15 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
             return;
         }
 
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        boolean isAirPlaneModeOn = Settings.Global.getInt(mContext.getContentResolver(),
+                Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+        if (isAirPlaneModeOn) {
+            CatLog.d(LOG_TAG, "Air Plane ModeOn");
+            finish();
+            return;
+        }
+        /* UNISOC: @}*/
         ActionBar actionBar = null;
         if (getResources().getBoolean(R.bool.show_menu_title_only_on_menu)) {
             actionBar = getActionBar();
@@ -176,7 +214,10 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
         }
 
         // Initialize members
-        mTextIn = (EditText) this.findViewById(R.id.in_text);
+        /*UNISOC: Feature for orange Feature SPCSS00430236@{*/
+        // mTextIn = (EditText) this.findViewById(R.id.in_text);
+        mTextIn = (RemoveInputMethodEditText) this.findViewById(R.id.in_text);
+        /* UNISOC: @}*/
         mPromptView = (TextView) this.findViewById(R.id.prompt);
         // Set buttons listeners.
         Button okButton = (Button) findViewById(R.id.button_ok);
@@ -192,6 +233,9 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
         mYesNoLayout = findViewById(R.id.yes_no_layout);
         mNormalLayout = findViewById(R.id.normal_layout);
         initFromIntent(getIntent());
+
+        // Bug for 1401453
+        appService.getStkContext(mSlotId).setPendingActivityInstance(this);
     }
 
     @Override
@@ -269,6 +313,11 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
             }
         }
         cancelTimeOut();
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        if (mReceiver != null) {
+            unregisterReceiver(mReceiver);
+        }
+        /* UNISOC: @}*/
     }
 
     @Override
@@ -493,13 +542,22 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
             mTextIn.setKeyListener(StkDigitsKeyListener.getInstance());
             inTypeId = R.string.digits;
         }
-        inTypeView.setText(inTypeId);
-
+        /*UNISOC: Feature for orange Feature SPCSS00430226 @{*/
+        //inTypeView.setText(inTypeId);
+        if (mContext.getResources().getBoolean(R.bool.config_support_authentification)) {
+            inTypeView.setText("");
+        } else {
+            inTypeView.setText(inTypeId);
+        }
+        /*UNISOC: @}*/
         setTitle(R.string.app_name);
 
         if (mStkInput.icon != null) {
             ImageView imageView = (ImageView) findViewById(R.id.icon);
             imageView.setImageBitmap(mStkInput.icon);
+            /*UNISOC: Feature bug @{*/
+            mPromptView.setTextColor(Color.BLACK);
+            /*UNISOC: @}*/
             imageView.setVisibility(View.VISIBLE);
         }
 
@@ -516,7 +574,14 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
             if (maxLen != minLen) {
                 lengthLimit = minLen + " - " + maxLen;
             }
-            numOfCharsView.setText(lengthLimit);
+            /*UNISOC: Feature for orange Feature SPCSS00430226 @{*/
+            //numOfCharsView.setText(lengthLimit);
+            if (mContext.getResources().getBoolean(R.bool.config_support_authentification)) {
+                numOfCharsView.setText("");
+            } else {
+                numOfCharsView.setText(lengthLimit);
+            }
+            /*UNISOC: @}*/
 
             if (!mStkInput.echo) {
                 mTextIn.setTransformationMethod(PasswordTransformationMethod
@@ -570,8 +635,55 @@ public class StkInputActivity extends Activity implements View.OnClickListener,
                 @Override
                 public void onAlarm() {
                     CatLog.d(LOG_TAG, "The alarm time is reached");
+                    mIsResponseSent = false;
                     mAlarmTime = NO_INPUT_ALARM;
                     sendResponse(StkAppService.RES_ID_TIMEOUT);
                 }
             };
+
+    /*UNISOC: Feature for AirPlane Feature & bug@{*/
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action == null ) return;
+
+            CatLog.d(LOG_TAG, "onReceive, action: " + action );
+            /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+            if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
+                CatLog.d(LOG_TAG, "ACTION_AIRPLANE_MODE_CHANGED rcvd finish");
+                sendResponse(StkAppService.RES_ID_BACKWARD, null, false);
+                finishAndRemoveTask();
+            } else if (action.equals(TelephonyManager.ACTION_SIM_CARD_STATE_CHANGED)) {
+                int slotId = intent.getIntExtra(PhoneConstants.PHONE_KEY, 0);
+                if (slotId != mSlotId) return;
+                int state = intent.getIntExtra(TelephonyManager.EXTRA_SIM_STATE,
+                        TelephonyManager.SIM_STATE_UNKNOWN);
+                if(TelephonyManager.SIM_STATE_ABSENT == state){
+                    CatLog.d(LOG_TAG, "ACTION_SIM_CARD_STATE_CHANGED absent, finish");
+                    cancelTimeOut();
+                    if (appService != null && (appService.isAllOtherCardsAbsent(slotId)
+                            || (!appService.isMainMenuExsit(slotId)))) {
+                        finishAndRemoveTask();
+                    } else {
+                        finish();
+                    }
+                }
+            } else if (action.equals(Intent.ACTION_SHUTDOWN)){
+                finishAndRemoveTask();
+            /*UNISOC: @}*/
+            /*UNISOC: Feature for orange Feature SPCSS00430235 @{*/
+            } else if (action.equals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) {
+                String reason = intent.getStringExtra(StkAppService.SYSTEM_REASON);
+                CatLog.d(LOG_TAG, "reason: " + reason);
+                if (TextUtils.equals(reason, StkAppService.SYSTEM_HOME_KEY)) {
+                    CatLog.d(LOG_TAG, "handleHomeKeyClick, ready to response");
+                    sendResponse(StkAppService.RES_ID_END_SESSION);
+                    finish();
+                }
+            /*UNISOC: @}*/
+            }
+        }
+    };
+    /*UNISOC: @}*/
 }

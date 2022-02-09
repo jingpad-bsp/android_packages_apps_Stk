@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"SIM ଟୁଲକିଟ୍"</string>
+<string name="menu_end_session">"ଅଧିବେଶନ ଶେଷ କରନ୍ତୁ"</string>
+<string name="help">"ସାହାଯ୍ୟ"</string>
+<string name="menu_back">"ପଛ"</string>
+<string name="service_name">"ସର୍ଭିସ୍ ନାମ"</string>
+<string name="stk_no_service">"କୌଣସି ସର୍ଭିସ୍ ଉପଲବ୍ଧ ନାହିଁ"</string>
+<string name="button_ok">"ଠିକଠାକ"</string>
+<string name="button_cancel">"ବାତିଲ କରନ୍ତୁ"</string>
+<string name="button_yes">"ହଁ"</string>
+<string name="button_no">"ନାହିଁ"</string>
+<string name="alphabet">"ଆଲ୍ଫାବେଟ୍ ଗୁଡ଼ିକ"</string>
+<string name="digits">"ଡିଜିଟ୍(0-9, *, #, +)"</string>
+<string name="default_call_setup_msg">"କଲ୍ ପ୍ରୋଗ୍ରେସରେ ଅଛି…"</string>
+<string name="default_setup_call_msg">"କଲ୍ ସେଟ୍ ହେଉଛି"</string>
+<string name="stk_app_state">"ଆପ୍ଲିକେସନ୍ ସ୍ଥିତି"</string>
+<string name="enable_app">"ଏନାବଲ୍ ହୋଇଛି"</string>
+<string name="disable_app">"ଅକ୍ଷମ କରାଯାଇଛି"</string>
+<string name="stk_dialog_title">"SIM ଟୁଲକିଟ୍"</string>
+<string name="default_open_channel_msg">"ଚ୍ୟାନେଲ୍ ଖୋଲିବେ କି?"</string>
+<string name="default_send_data_msg">"ଡାଟା ପଠାଉଛି"</string>
+<string name="default_receive_data_msg">"ଡାଟା ଗ୍ରହଣ କରୁଛି"</string>
+<string name="default_close_channel_msg">"ଚ୍ୟାନେଲ୍ ବନ୍ଦ ହୋଇଛି"</string>
+<string name="stk_dialog_accept">"ହଁ"</string>
+<string name="stk_dialog_reject">"ନାହିଁ"</string>
+<string name="no_sim_card_inserted">"SIM ଟୁଲକିଟ୍ ଲଞ୍ଚ୍ କରିବା ପାଇଁ ଦୟାକରି SIM ଇନସର୍ଟ କରନ୍ତୁ ।"</string>
+<string name="default_tone_dialog_msg">"ପ୍ଲେଇଂଗ ଟୋନ"</string>
+<string name="stk_channel_name">"ମୋବାଇଲ ସର୍ଭିସ ମେସେଜ"</string>
+</resources>

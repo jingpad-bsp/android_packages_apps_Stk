@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">SIM ٹول کٹ</string>
+<string name="menu_end_session">ختم کرییو آپشن</string>
+<string name="help">مدد</string>
+<string name="menu_back">"راہ"</string>
+<string name="service_name">خدمات ناو</string>
+<string name="stk_no_service">خدمات چھنه دستياب</string>
+<string name="button_ok">"ٹھیک"</string>
+<string name="button_cancel">"خائریج"</string>
+<string name="button_yes">"اوا"</string>
+<string name="button_no">"نہ"</string>
+<string name="alphabet">حرف</string>
+<string name="digits">دگٹس (0-9، *، #، +)</string>
+<string name="default_call_setup_msg">کال چھ چلان ...</string>
+<string name="default_setup_call_msg">کال چھ گسان سیٹ اپ</string>
+<string name="stk_app_state">ایپلی اپلیکیشن حالت</string>
+<string name="enable_app">کارگر</string>
+<string name="disable_app">"کمزور گمت"</string>
+<string name="stk_dialog_title">SIM ٹول کٹ</string>
+<string name="default_open_channel_msg">ییل چینل؟</string>
+<string name="default_send_data_msg">سوذان ڈیٹا</string>
+<string name="default_receive_data_msg">برآمد کران ڈیٹا</string>
+<string name="default_close_channel_msg">چینل گئی بند</string>
+<string name="stk_dialog_accept">"اوا"</string>
+<string name="stk_dialog_reject">"نہ"</string>
+<string name="no_sim_card_inserted">مهرباني كريتھ کرییو داخل SIM لانچ SIM ٹول کٹ کھتر.</string>
+<string name="default_tone_dialog_msg">" چلایو ٹون"</string>
+<string name="stk_channel_name">" موبایل کامء ہند اطلاع"</string>
+</resources>

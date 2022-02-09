@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<string name="app_name">"SIM ಟೂಲ್ ಕಿಟ್"</string>
+<string name="menu_end_session">"ಸೆಷನ್ ಅನ್ನು ಕೊನೆಗೊಳಿಸಿ"</string>
+<string name="help">"ಸಹಾಯ"</string>
+<string name="menu_back">"ಹಿಂದೆ"</string>
+<string name="service_name">"ಸೇವೆಯ ಹೆಸರು"</string>
+<string name="stk_no_service">"ಯಾವುದೇ ಸೇವೆ ಲಭ್ಯವಿಲ್ಲ"</string>
+<string name="button_ok">"ಸರಿ"</string>
+<string name="button_cancel">"ರದ್ದು"</string>
+<string name="button_yes">"ಹೌದು"</string>
+<string name="button_no">"ಇಲ್ಲ"</string>
+<string name="alphabet">"ಅಕ್ಷರಗಳು"</string>
+<string name="digits">"ಅಂಕಿಗಳು(0-9, *, # +)"</string>
+<string name="default_call_setup_msg">"ಕರೆ ಪ್ರಗತಿಯಲ್ಲಿದೆ\u2026"</string>
+<string name="default_setup_call_msg">"ಕರೆ ಹೊಂದಾಣಿಕೆ ಮಾಡಲಾಗುತ್ತಿದೆ"</string>
+<string name="stk_app_state">"ಅಪ್ಲಿಕೇಶನ್ ಸ್ಥಿತಿ"</string>
+<string name="enable_app">"ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"</string>
+<string name="disable_app">"ಅಸಮರ್ಥಗೊಳಿಸಲಾಗಿದೆ"</string>
+<string name="stk_dialog_title">"SIM ಟೂಲ್ ಕಿಟ್"</string>
+<string name="default_tone_dialog_msg">"ಟೋನ್ ಪ್ಲೇ ಆಗುತ್ತಿದೆ"</string>
+<string name="default_open_channel_msg">"ಚಾನೆಲ್ ತೆರೆಯಬೇಕೆ?"</string>
+<string name="default_send_data_msg">"ಡೇಟಾ ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ"</string>
+<string name="default_receive_data_msg">"ಡೇಟಾ ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ"</string>
+<string name="default_close_channel_msg">"ಡೇಟಾ ಸ್ವೀಕರಿಸಲಾಗುತ್ತಿದೆ"</string>
+<string name="stk_dialog_accept">"ಹೌದು"</string>
+<string name="stk_dialog_reject">"ಇಲ್ಲ"</string>
+<string name="no_sim_card_inserted">"SIM ಟೂಲ್‌ ಕಿಟ್ ಅನ್ನು ಪ್ರಾರಂಭಿಸಲು SIM ಇನ್ಸರ್ಟ್‌ ಮಾಡಿ."</string>
+<string name="stk_channel_name">"ಮೊಬೈಲ್ ಸೇವಾ ಸಂದೇಶಗಳು"</string>
+</resources>

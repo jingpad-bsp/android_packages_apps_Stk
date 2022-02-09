@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by UNISOC -->
+<resources>
+    <string name="app_name1">USIM Toolkit1</string>
+    <string name="app_name2">USIM Toolkit2</string>
+    <string name="app_name_alias">""</string>
+</resources>

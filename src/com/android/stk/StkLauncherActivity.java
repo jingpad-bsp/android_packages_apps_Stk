@@ -20,6 +20,15 @@ import android.app.ActionBar;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.provider.Settings;
 import android.os.Bundle;
 import android.view.View;
 import android.view.KeyEvent;
@@ -28,6 +37,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.android.internal.telephony.cat.Item;
 import com.android.internal.telephony.cat.Menu;
@@ -71,8 +82,38 @@ public class StkLauncherActivity extends ListActivity {
         mTitleTextView = (TextView) findViewById(R.id.title_text);
         mTitleIconView = (ImageView) findViewById(R.id.title_icon);
         mTitleTextView.setText(R.string.app_name);
-        mBitMap = BitmapFactory.decodeResource(getResources(),
-                R.drawable.ic_launcher_sim_toolkit);
+//        mBitMap = BitmapFactory.decodeResource(getResources(),
+//                R.drawable.ic_launcher_sim_toolkit);
+        /*UNISOC: Feature for Stk Icon Feature @{*/
+        try {
+            ApplicationInfo app = getPackageManager().getApplicationInfo(getPackageName(), 0);
+            mBitMap = drawableToBitmap(app.loadIcon(mContext.getPackageManager()));
+        }catch (NameNotFoundException e) {
+            CatLog.d(LOG_TAG, "NameNotFoundException");
+            mBitMap = null;
+        }
+        /*UNISOC: @}*/
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        IntentFilter intent = new IntentFilter();
+        intent.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        intent.addAction(Intent.ACTION_SHUTDOWN);
+        mContext.registerReceiver(mReceiver, intent);
+
+        /* UNISOC: For bug 1466545 @{ */
+        IntentFilter newIntent = new IntentFilter();
+        newIntent.addAction(StkAppService.CARD_ABSENT);
+        LocalBroadcastManager.getInstance(this).registerReceiver(LocalBroadcastReceiver,
+                newIntent);
+        /* UNISOC: For bug 1466545 @} */
+
+        boolean isAirPlaneModeOn = Settings.Global.getInt(mContext.getContentResolver(),
+                Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+        if (isAirPlaneModeOn) {
+            CatLog.d(LOG_TAG, "Air Plane ModeOn");
+            finish();
+            return;
+        }
+        /*UNISOC: @}*/
     }
 
     @Override
@@ -143,6 +184,13 @@ public class StkLauncherActivity extends ListActivity {
     public void onDestroy() {
         super.onDestroy();
         CatLog.d(LOG_TAG, "onDestroy");
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        if(mReceiver != null){
+            unregisterReceiver(mReceiver);
+        }
+        /*UNISOC: @}*/
+        // For bug 1466545
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(LocalBroadcastReceiver);
     }
 
     private Item getSelectedItem(int position) {
@@ -225,4 +273,49 @@ public class StkLauncherActivity extends ListActivity {
         startService(new Intent(this, StkAppService.class)
                 .putExtras(args));
     }
+
+    /*UNISOC: Feature for Stk Icon Feature @{*/
+    private Bitmap drawableToBitmap(Drawable drawable) {
+        if (drawable instanceof BitmapDrawable) {
+            CatLog.d(LOG_TAG, "Utilities.drawableToBitmap. drawable instanceof BitmapDrawable");
+            return ((BitmapDrawable) drawable).getBitmap();
+        }
+
+        CatLog.d(LOG_TAG, "Utilities.drawableToBitmap, !(drawable instanceof BitmapDrawable)");
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(),
+               drawable.getIntrinsicHeight(), Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bitmap;
+    }
+    /*UNISOC: @}*/
+    /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            CatLog.d(LOG_TAG, "onReceive, action: " + action );
+            if (action == null ) return;
+            StkAppService appService = StkAppService.getInstance();
+            if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
+                CatLog.d(LOG_TAG, "ACTION_AIRPLANE_MODE_CHANGED rcvd finish");
+                finishAndRemoveTask();
+            } else if(action.equals(Intent.ACTION_SHUTDOWN)) {
+                finishAndRemoveTask();
+            }
+        }
+    };
+    /*UNISOC: @}*/
+    /* UNISOC: For bug 1466545 @{ */
+    private final BroadcastReceiver LocalBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            CatLog.d(LOG_TAG, "onReceive: CARD_ABSENT");
+            if (StkAppService.CARD_ABSENT.equals(intent.getAction())) {
+                finish();
+            }
+        }
+    };
+    /* UNISOC: For bug 1466545 @} */
 }

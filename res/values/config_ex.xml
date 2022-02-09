@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="config_support_authentification">false</bool>
+    <bool name="config_show_two_app">false</bool>
+    <bool name="config_refresh_no_toast">false</bool>
+    <bool name="config_show_setupMenu_title">false</bool>
+    <bool name="config_show_specific_name">false</bool>
+</resources>

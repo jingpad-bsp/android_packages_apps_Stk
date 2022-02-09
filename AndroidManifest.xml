@@ -22,6 +22,8 @@
 
     <original-package android:name="com.android.stk" />
 
+    <uses-sdk
+        android:minSdkVersion="29"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.GET_TASKS"/>
     <uses-permission android:name="android.permission.RECEIVE_STK_COMMANDS" />
@@ -31,16 +33,19 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <application android:icon="@drawable/ic_launcher_sim_toolkit"
+    <application
+        android:name="StkApp"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:clearTaskOnLaunch="true"
         android:process="com.android.phone"
         android:taskAffinity="android.task.stk"
         android:defaultToDeviceProtectedStorage="true"
-        android:directBootAware="true">
+        android:directBootAware="true"
+        android:resizeableActivity="false">
 
         <activity android:name="StkMain"
-            android:theme="@android:style/Theme.NoDisplay"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:label="@string/app_name"
             android:enabled="false"
             android:exported="true"
@@ -51,21 +56,59 @@
             </intent-filter>
         </activity>
 
+        <activity-alias
+            android:name="StkMainAlias"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:label="@string/app_name"
+            android:icon="@mipmap/ic_launcher"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.android.stk.StkMain">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity android:name="StkMain1"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:label="@string/app_name1"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_sim1_toolkit_ex">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name="StkMain2"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:label="@string/app_name2"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_sim2_toolkit_ex">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <activity android:name="StkLauncherActivity"
-            android:theme="@android:style/Theme.Material.Light"
+            android:theme="@style/Theme.StkScreen"
             android:label="@string/app_name"
             android:exported="false"
             android:taskAffinity="android.task.stk.StkLauncherActivity">
             <intent-filter>
-                 <action android:name="android.intent.action.VIEW" />
-                 <action android:name="android.intent.action.PICK" />
-                 <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.PICK" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
         <activity android:name="StkMenuActivity"
-            android:theme="@android:style/Theme.Material.Light"
-            android:icon="@drawable/ic_launcher_sim_toolkit"
+            android:theme="@style/Theme.StkScreen"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:configChanges="orientation|locale|screenSize|keyboardHidden|mnc|mcc"
             android:exported="false"
@@ -79,21 +122,23 @@
 
         <activity android:name="StkInputActivity"
             android:label="@string/app_name"
-            android:icon="@drawable/ic_launcher_sim_toolkit"
-            android:theme="@android:style/Theme.Material.Light"
+            android:icon="@mipmap/ic_launcher"
+            android:theme="@style/Theme.StkScreen"
             android:configChanges="orientation|locale|screenSize|keyboardHidden"
             android:exported="false"
             android:taskAffinity="android.task.stk.StkLauncherActivity">
-                <intent-filter>
-                        <action android:name="android.intent.action.VIEW" />
-                        <action android:name="android.intent.action.EDIT" />
-                        <category android:name="android.intent.category.DEFAULT" />
-                </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
+
         <activity android:name="StkDialogActivity"
             android:configChanges="orientation|locale|screenSize|keyboardHidden"
             android:theme="@style/Transparent"
             android:exported="false"
+            android:resumeWhilePausing="true"
             android:taskAffinity="android.task.stk.StkLauncherActivity">
         </activity>
 
@@ -101,6 +146,11 @@
             android:exported="false"
             android:theme="@style/Transparent"
             android:taskAffinity="android.task.stk.StkLauncherActivity">
+        </activity>
+
+        <activity android:name="StkMessageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.StkScreen">
         </activity>
 
         <receiver android:name="com.android.stk.StkCmdReceiver">
@@ -116,6 +166,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.USER_INITIALIZE" />
+                <action android:name="android.telephony.action.SIM_CARD_STATE_CHANGED" />
+                <action android:name="android.telephony.action.SIM_APPLICATION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
 

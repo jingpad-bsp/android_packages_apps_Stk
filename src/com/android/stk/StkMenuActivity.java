@@ -26,7 +26,9 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
+import android.provider.Settings;
 import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -41,6 +43,8 @@ import android.widget.TextView;
 import com.android.internal.telephony.cat.CatLog;
 import com.android.internal.telephony.cat.Item;
 import com.android.internal.telephony.cat.Menu;
+import com.android.internal.telephony.PhoneConstants;
+import com.android.internal.telephony.TelephonyIntents;
 
 /**
  * ListActivity used for displaying STK menus. These can be SET UP MENU and
@@ -82,6 +86,9 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
     static final int STATE_SECONDARY = 2;
 
     private static final int CONTEXT_MENU_HELP = 0;
+    /*UNISOC: Feature bug @{*/
+    private Context mContext;
+    /*UNISOC: @}*/
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -100,6 +107,21 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
         mProgressView = (ProgressBar) findViewById(R.id.progress_bar);
         getListView().setOnCreateContextMenuListener(this);
 
+        mContext = getBaseContext();
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        IntentFilter intent = new IntentFilter();
+        intent.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        intent.addAction(Intent.ACTION_SHUTDOWN);
+        registerReceiver(mReceiver, intent);
+
+        boolean isAirPlaneModeOn = Settings.Global.getInt(mContext.getContentResolver(),
+                Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+        if (isAirPlaneModeOn) {
+            CatLog.d(LOG_TAG, "Air Plane ModeOn");
+            finish();
+            return;
+        }
+        /* UNISOC: @}*/
         // appService can be null if this activity is automatically recreated by the system
         // with the saved instance state right after the phone process is killed.
         if (appService == null) {
@@ -108,13 +130,29 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
             return;
         }
 
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(StkAppService.SESSION_ENDED);
+        intentFilter.addAction(StkAppService.REFRESH_UNINSTALL);
+
+        // For bug 1466545
+        intentFilter.addAction(StkAppService.CARD_ABSENT);
         LocalBroadcastManager.getInstance(this).registerReceiver(mLocalBroadcastReceiver,
-                new IntentFilter(StkAppService.SESSION_ENDED));
+                intentFilter);
+
         initFromIntent(getIntent());
-        if (!SubscriptionManager.isValidSlotIndex(mSlotId)) {
+        TelephonyManager mTm = (TelephonyManager) mContext.getSystemService(
+                Context.TELEPHONY_SERVICE);
+        if (!SubscriptionManager.isValidSlotIndex(mSlotId)
+               || !mTm.hasIccCard(mSlotId)) {
             finish();
             return;
         }
+
+        /*UNISOC: Feature bug 1401453 @{*/
+        if (mState == STATE_SECONDARY) {
+            appService.getStkContext(mSlotId).setPendingActivityInstance(this);
+        }
+        /*UNISOC: @}*/
     }
 
     @Override
@@ -126,12 +164,21 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
             return;
         }
 
+        /*UNISOC: Feature bug @{*/
+        if (appService != null) {
+            appService.setmHomeKeyEvent(false);
+        }
+        /*UNISOC: @}*/
+
         Item item = getSelectedItem(position);
         if (item == null) {
             CatLog.d(LOG_TAG, "Item is null");
             return;
         }
 
+        /*UNISOC: Feature for ModemAseert not display text Feature @{*/
+        System.setProperty("gsm.stk.modem.recovery" + mSlotId, "0");
+        /*UNISOC: @}*/
         CatLog.d(LOG_TAG, "onListItemClick Id: " + item.id + ", mState: " + mState);
         sendResponse(StkAppService.RES_ID_MENU_SELECTION, item.id, false);
         invalidateOptionsMenu();
@@ -143,6 +190,12 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
         if (!mAcceptUsersInput) {
             return true;
         }
+
+        /*UNISOC: Feature bug @{*/
+        if (appService != null) {
+            appService.setmHomeKeyEvent(false);
+        }
+        /*UNISOC: @}*/
 
         switch (keyCode) {
         case KeyEvent.KEYCODE_BACK:
@@ -167,7 +220,18 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
         super.onResume();
 
         CatLog.d(LOG_TAG, "onResume, slot id: " + mSlotId + "," + mState);
+        /*UNISOC: Feature bug @{*/
+        if (appService == null) {
+            CatLog.d(LOG_TAG, "appService is null");
+            cancelTimeOut();
+            finish();
+            return;
+        }
+        /*UNISOC: @}*/
         appService.indicateMenuVisibility(true, mSlotId);
+        /*UNISOC: Feature bug @{*/
+        appService.setmHomeKeyEvent(false);
+        /*UNISOC: @}*/
         if (mState == STATE_MAIN) {
             mStkMenu = appService.getMainMenu(mSlotId);
         } else {
@@ -191,12 +255,16 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
         }
 
         invalidateOptionsMenu();
+        /*UNISOC: Feature bug @{*/
+        showProgressBar(false);
+        /*UNISOC: @}*/
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        CatLog.d(LOG_TAG, "onPause, slot id: " + mSlotId + "," + mState);
+        CatLog.d(LOG_TAG, "onPause, slot id = " + mSlotId + "," + " mState = "
+                + mState + ","  + " mAcceptUsersInput = " + mAcceptUsersInput);
         //If activity is finished in onResume and it reaults from null appService.
         if (appService != null) {
             appService.indicateMenuVisibility(false, mSlotId);
@@ -249,16 +317,24 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
         }
         //isMenuPending: if input act is finish by stkappservice when OP_LAUNCH_APP again,
         //we can not send TR here, since the input cmd is waiting user to process.
-        if (mState == STATE_SECONDARY && !mIsResponseSent && !appService.isMenuPending(mSlotId)) {
+        if (mState == STATE_SECONDARY && !mIsResponseSent && !(appService != null && appService.isMenuPending(mSlotId))) {
             // Avoid sending the terminal response while the activty is being restarted
-            // due to some kind of configuration change.
-            if (!isChangingConfigurations()) {
-                CatLog.d(LOG_TAG, "handleDestroy - Send End Session");
-                sendResponse(StkAppService.RES_ID_END_SESSION);
+            // due to some kind of configuration change.\
+            if (appService.getStkContext(mSlotId) != null
+                    && appService.getStkContext(mSlotId).getImmediateDialogInstance() != null) {
+                if (!isChangingConfigurations()) {
+                    CatLog.d(LOG_TAG, "handleDestroy - Send End Session");
+                    sendResponse(StkAppService.RES_ID_END_SESSION);
+                }
             }
         }
         cancelTimeOut();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocalBroadcastReceiver);
+        /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+        if (mReceiver != null) {
+            unregisterReceiver(mReceiver);
+        }
+        /*UNISOC: @} */
     }
 
     @Override
@@ -287,6 +363,11 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
         if (!mAcceptUsersInput) {
             return true;
         }
+        /*UNISOC: Feature bug @{*/
+        if (appService != null) {
+            appService.setmHomeKeyEvent(false);
+        }
+        /*UNISOC: @}*/
         switch (item.getItemId()) {
         case StkApp.MENU_ID_END_SESSION:
             // send session end response.
@@ -513,11 +594,27 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
         public void onReceive(Context context, Intent intent) {
             if (StkAppService.SESSION_ENDED.equals(intent.getAction())) {
                 int slotId = intent.getIntExtra(StkAppService.SLOT_ID, 0);
+                /* UNISOC: Feature bug @{ */
+                CatLog.d(LOG_TAG, "mLocalBroadcastReceiver SESSION_ENDED, mState: "
+                        + mState + " slotId:" + slotId);
+                /*UNISOC: @}*/
                 if ((mState == STATE_MAIN) && (mSlotId == slotId)) {
                     mAcceptUsersInput = true;
                     showProgressBar(false);
                 }
+            } else if (StkAppService.REFRESH_UNINSTALL.equals(intent.getAction())) {
+                CatLog.d(LOG_TAG, "mLocalBroadcastReceiver REFRESH_UNINSTALL");
+                cancelTimeOut();
+                finish();
+
+            /* UNISOC: For bug 1466545 @{ */
+            } else if (StkAppService.CARD_ABSENT.equals(intent.getAction())) {
+                CatLog.d(LOG_TAG, "mLocalBroadcastReceiver CARD_ABSENT");
+                int slotId = intent.getIntExtra(StkAppService.SLOT_ID, 0);
+                if (slotId != mSlotId) return;
+                finish();
             }
+            /* UNISOC: For bug 1466545 @} */
         }
     };
 
@@ -530,4 +627,32 @@ public class StkMenuActivity extends ListActivity implements View.OnCreateContex
                     sendResponse(StkAppService.RES_ID_TIMEOUT);
                 }
             };
+
+    /*UNISOC: Feature for AirPlane install/unistall Stk @{*/
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            CatLog.d(LOG_TAG, "mReceiver action: " + action);
+            if (action == null ) return;
+            if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
+                sendResponse(StkAppService.RES_ID_END_SESSION);
+                finishAndRemoveTask();
+            } else if(action.equals(Intent.ACTION_SHUTDOWN)){
+                finishAndRemoveTask();
+            }
+        }
+    };
+    /*UNISOC: @} */
+
+    /*UNISOC: Feature bug @{*/
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        CatLog.d(LOG_TAG, " onNewIntent");
+        initFromIntent(intent);
+        cancelTimeOut();
+        mAcceptUsersInput = true;
+    }
+    /*UNISOC: @} */
 }
